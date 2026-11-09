@@ -1,0 +1,6 @@
+{
+  "name": "DulceCosto - Gestión y Facturación para Repostería",
+  "description": "Aplicación de costeo de recetas, control de producción, análisis de rentabilidad y emisión de facturas para negocios de repostería y pastelería.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
