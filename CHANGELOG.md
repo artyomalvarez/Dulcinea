@@ -4,7 +4,15 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/) y este proyecto se adhiere a la política de documentación técnica continua.
 
-## [Unreleased] - 2026-11-10T18:09:46-05:00 (America/Bogota)
+## [Unreleased] - 2026-11-10T18:23:15-05:00 (America/Bogota)
+
+### Fixed
+- **Resolución de conflicto de dependencias peer en CI (ERESOLVE)**:
+  - Actualizado `esbuild` en [`package.json`](package.json) a `^0.28.0` para satisfacer la peer dependency requerida por `vite@8.3.7` (`^0.27.0 || ^0.28.0`).
+  - Regenerado [`package-lock.json`](package-lock.json) y verificado con `npm ci` y `npm install` limpios.
+  - Añadido archivo [`.npmrc`](.npmrc) con `legacy-peer-deps=true` y flag `--legacy-peer-deps` en los workflows de GitHub Actions para blindar el pipeline ante futuros conflictos de peer dependencies.
+
+## [0.1.0] - 2026-11-10T18:09:46-05:00 (America/Bogota)
 
 ### Added
 - **Estructura CI/CD para Azure App Service**:

@@ -26,7 +26,7 @@
 
 El flujo de despliegue continuo está inspirado en la arquitectura de [nuz777/NuzNotes](https://github.com/nuz777/NuzNotes):
 
-1. **Workflow de GitHub Actions:** [`.github/workflows/deploy-azure-appservice.yml`](.github/workflows/deploy-azure-appservice.yml).
+1. **Workflow de GitHub Actions:** [`.github/workflows/main_dulcinea-app.yml`](.github/workflows/main_dulcinea-app.yml).
 2. **Configuración de inicio en Azure:**
    ```bash
    pm2 serve /home/site/wwwroot --no-daemon --spa
