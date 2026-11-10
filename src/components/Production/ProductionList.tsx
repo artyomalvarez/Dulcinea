@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { BusinessProfile, Product, ProductionBatch } from '../../types/bakery';
 import { formatCurrency, formatPercent } from '../../utils/units';
+import { CostCalculator } from '../../domain/services/CostCalculator';
 
 interface ProductionListProps {
   batches: ProductionBatch[];
@@ -51,17 +52,25 @@ export const ProductionList: React.FC<ProductionListProps> = ({
   // Pre-fill when modal opens or preselected product changes
   React.useEffect(() => {
     if (preselectedProduct) {
+      const batchCost = CostCalculator.calculateBatchCost(
+        preselectedProduct.ingredients,
+        preselectedProduct.otherDirectCosts
+      );
       setSelectedProductId(preselectedProduct.id);
       setUnitsPerBatch(preselectedProduct.batchYieldUnits || 5);
       setNumberOfBatches(3);
-      setTotalSuppliesCost(Math.round((preselectedProduct.totalBatchCost || 25) * 3 * 100) / 100);
+      setTotalSuppliesCost(Math.round((batchCost || 25) * 3 * 100) / 100);
       setNotes(`Elaboración de 3 lotes de ${preselectedProduct.name}.`);
     } else if (products.length > 0 && !selectedProductId) {
       const first = products[0];
+      const batchCost = CostCalculator.calculateBatchCost(
+        first.ingredients,
+        first.otherDirectCosts
+      );
       setSelectedProductId(first.id);
       setUnitsPerBatch(first.batchYieldUnits || 5);
       setNumberOfBatches(3);
-      setTotalSuppliesCost(Math.round((first.totalBatchCost || 25) * 3 * 100) / 100);
+      setTotalSuppliesCost(Math.round((batchCost || 25) * 3 * 100) / 100);
       setNotes(`Elaboración de lote para ${first.name}.`);
     }
   }, [preselectedProduct, isOpenModal, products]);
@@ -70,8 +79,12 @@ export const ProductionList: React.FC<ProductionListProps> = ({
     setSelectedProductId(prodId);
     const prod = products.find((p) => p.id === prodId);
     if (prod) {
+      const batchCost = CostCalculator.calculateBatchCost(
+        prod.ingredients,
+        prod.otherDirectCosts
+      );
       setUnitsPerBatch(prod.batchYieldUnits);
-      setTotalSuppliesCost(Math.round(prod.totalBatchCost * numberOfBatches * 100) / 100);
+      setTotalSuppliesCost(Math.round(batchCost * numberOfBatches * 100) / 100);
       setNotes(`Elaboración de ${numberOfBatches} lote(s) de ${prod.name}.`);
     }
   };
@@ -80,21 +93,33 @@ export const ProductionList: React.FC<ProductionListProps> = ({
     setNumberOfBatches(count);
     const prod = products.find((p) => p.id === selectedProductId);
     if (prod) {
-      setTotalSuppliesCost(Math.round(prod.totalBatchCost * count * 100) / 100);
+      const batchCost = CostCalculator.calculateBatchCost(
+        prod.ingredients,
+        prod.otherDirectCosts
+      );
+      setTotalSuppliesCost(Math.round(batchCost * count * 100) / 100);
     }
   };
 
-  // Live Calculations for current form
+  // Live Calculations for current form using CostCalculator
   const safeBatches = numberOfBatches > 0 ? numberOfBatches : 1;
   const safeUnitsPerBatch = unitsPerBatch > 0 ? unitsPerBatch : 1;
   const totalUnitsProduced = safeBatches * safeUnitsPerBatch;
-  const costPerUnit = totalUnitsProduced > 0 ? Math.round((totalSuppliesCost / totalUnitsProduced) * 100) / 100 : 0;
 
   const currentProduct = products.find((p) => p.id === selectedProductId);
   const sellingPrice = currentProduct ? currentProduct.sellingPrice : 0;
-  const profitPerUnit = Math.round((sellingPrice - costPerUnit) * 100) / 100;
-  const totalPotentialRevenue = Math.round((sellingPrice * totalUnitsProduced) * 100) / 100;
-  const totalPotentialProfit = Math.round((profitPerUnit * totalUnitsProduced) * 100) / 100;
+  const {
+    costPerUnit,
+    profitPerUnit,
+    totalBatchRevenue: totalPotentialRevenue,
+    totalBatchProfit: totalPotentialProfit,
+  } = CostCalculator.calculateProductMetrics({
+    ingredients: [],
+    otherDirectCosts: totalSuppliesCost,
+    batchYieldUnits: totalUnitsProduced,
+    sellingPrice,
+    suggestedMarginPercent: currentProduct?.suggestedMarginPercent || 50,
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

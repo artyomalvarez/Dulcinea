@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { BusinessProfile, Product } from '../../types/bakery';
 import { formatCurrency, formatPercent } from '../../utils/units';
+import { CostCalculator } from '../../domain/services/CostCalculator';
 
 interface RecipeBookPdfModalProps {
   isOpen: boolean;
@@ -55,12 +56,18 @@ export const RecipeBookPdfModal: React.FC<RecipeBookPdfModalProps> = ({
 
   const avgCostPerUnit =
     filteredProducts.length > 0
-      ? filteredProducts.reduce((sum, p) => sum + p.costPerUnit, 0) / filteredProducts.length
+      ? filteredProducts.reduce(
+          (sum, p) => sum + CostCalculator.calculateProductMetrics(p).costPerUnit,
+          0
+        ) / filteredProducts.length
       : 0;
 
   const avgMargin =
     filteredProducts.length > 0
-      ? filteredProducts.reduce((sum, p) => sum + p.profitMarginPercent, 0) / filteredProducts.length
+      ? filteredProducts.reduce(
+          (sum, p) => sum + CostCalculator.calculateProductMetrics(p).profitMarginPercent,
+          0
+        ) / filteredProducts.length
       : 0;
 
   return (
@@ -214,7 +221,8 @@ export const RecipeBookPdfModal: React.FC<RecipeBookPdfModalProps> = ({
             ) : (
               filteredProducts.map((product, index) => {
                 const totalRecipeItems = product.ingredients.length;
-                const batchProfit = product.profitPerUnit * product.batchYieldUnits;
+                const metrics = CostCalculator.calculateProductMetrics(product);
+                const batchProfit = metrics.totalBatchProfit;
 
                 return (
                   <div
@@ -263,14 +271,14 @@ export const RecipeBookPdfModal: React.FC<RecipeBookPdfModalProps> = ({
                           <div className="bg-white p-2 rounded-lg border border-amber-200/50">
                             <span className="text-[10px] font-bold text-stone-500 uppercase block">Costo Total Lote</span>
                             <span className="text-xs font-bold text-stone-900 font-mono mt-0.5 block">
-                              {formatCurrency(product.totalBatchCost, business.currencySymbol)}
+                              {formatCurrency(metrics.totalBatchCost, business.currencySymbol)}
                             </span>
                           </div>
 
                           <div className="bg-amber-100/60 p-2 rounded-lg border border-amber-300/60">
                             <span className="text-[10px] font-extrabold text-amber-950 uppercase block">Costo / Porción</span>
                             <span className="text-sm font-black text-amber-900 font-mono mt-0.5 block">
-                              {formatCurrency(product.costPerUnit, business.currencySymbol)}
+                              {formatCurrency(metrics.costPerUnit, business.currencySymbol)}
                             </span>
                           </div>
 
@@ -284,7 +292,7 @@ export const RecipeBookPdfModal: React.FC<RecipeBookPdfModalProps> = ({
                           <div className="bg-white p-2 rounded-lg border border-amber-200/50">
                             <span className="text-[10px] font-bold text-emerald-800 uppercase block">Utilidad / Porción</span>
                             <span className="text-xs font-bold text-emerald-700 font-mono mt-0.5 block">
-                              +{formatCurrency(product.profitPerUnit, business.currencySymbol)} ({formatPercent(product.profitMarginPercent)})
+                              +{formatCurrency(metrics.profitPerUnit, business.currencySymbol)} ({formatPercent(metrics.profitMarginPercent)})
                             </span>
                           </div>
                         </div>
@@ -292,7 +300,7 @@ export const RecipeBookPdfModal: React.FC<RecipeBookPdfModalProps> = ({
                         {/* Exact Formula explanation */}
                         <div className="text-[11px] text-stone-600 bg-white/70 px-2.5 py-1.5 rounded-lg border border-amber-200/40 flex items-center justify-between">
                           <span>
-                            <strong>Fórmula de Costeo:</strong> Gasto total de insumos ({formatCurrency(product.totalBatchCost, business.currencySymbol)}) ÷ {product.batchYieldUnits} {product.yieldUnitName} = <strong className="text-amber-900 font-mono">{formatCurrency(product.costPerUnit, business.currencySymbol)}</strong> por porción.
+                            <strong>Fórmula de Costeo:</strong> Gasto total de insumos ({formatCurrency(metrics.totalBatchCost, business.currencySymbol)}) ÷ {product.batchYieldUnits} {product.yieldUnitName} = <strong className="text-amber-900 font-mono">{formatCurrency(metrics.costPerUnit, business.currencySymbol)}</strong> por porción.
                           </span>
                           <span className="text-emerald-800 font-bold hidden sm:inline">
                             Ganancia neta por lote: +{formatCurrency(batchProfit, business.currencySymbol)}
@@ -373,7 +381,7 @@ export const RecipeBookPdfModal: React.FC<RecipeBookPdfModalProps> = ({
                                   Costo Total del Lote:
                                 </td>
                                 <td className="py-2 px-3 text-right font-mono text-sm text-amber-900">
-                                  {formatCurrency(product.totalBatchCost, business.currencySymbol)}
+                                  {formatCurrency(metrics.totalBatchCost, business.currencySymbol)}
                                 </td>
                               </tr>
                             </tfoot>

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { BusinessProfile } from '../../types/bakery';
 import { formatCurrency, formatPercent } from '../../utils/units';
+import { CostCalculator } from '../../domain/services/CostCalculator';
 
 interface ProfitabilityCalculatorModalProps {
   business: BusinessProfile;
@@ -34,23 +35,24 @@ export const ProfitabilityCalculatorModal: React.FC<ProfitabilityCalculatorModal
   const [sellingPrice, setSellingPrice] = useState<number>(12);
   const [desiredMarginPercent, setDesiredMarginPercent] = useState<number>(55);
 
-  // Exact calculations
+  // Exact calculations via CostCalculator
   const totalUnits = numberOfBatches * unitsPerBatch;
-  const costPerUnit = totalUnits > 0 ? totalSupplies / totalUnits : 0;
-  const profitPerUnit = sellingPrice - costPerUnit;
-  const grossMarginPercent = sellingPrice > 0 ? (profitPerUnit / sellingPrice) * 100 : 0;
-  const markupPercent = costPerUnit > 0 ? (profitPerUnit / costPerUnit) * 100 : 0;
-  const totalBatchRevenue = totalUnits * sellingPrice;
-  const totalBatchProfit = totalUnits * profitPerUnit;
-
-  // Breakeven point
-  const breakevenUnits = sellingPrice > 0 ? Math.ceil(totalSupplies / sellingPrice) : 0;
-
-  // Suggested price based on desired margin
-  const suggestedPrice =
-    desiredMarginPercent < 100 && desiredMarginPercent > 0
-      ? costPerUnit / (1 - desiredMarginPercent / 100)
-      : costPerUnit * 1.5;
+  const {
+    costPerUnit,
+    profitPerUnit,
+    profitMarginPercent: grossMarginPercent,
+    markupPercent,
+    totalBatchRevenue,
+    totalBatchProfit,
+    breakevenUnits,
+    suggestedPrice,
+  } = CostCalculator.calculateProductMetrics({
+    ingredients: [],
+    otherDirectCosts: totalSupplies,
+    batchYieldUnits: totalUnits,
+    sellingPrice,
+    suggestedMarginPercent: desiredMarginPercent,
+  });
 
   const handleResetToUserExample = () => {
     setTotalSupplies(75);
@@ -191,7 +193,7 @@ export const ProfitabilityCalculatorModal: React.FC<ProfitabilityCalculatorModal
                   const m = Number(e.target.value);
                   setDesiredMarginPercent(m);
                   if (costPerUnit > 0) {
-                    setSellingPrice(Math.round((costPerUnit / (1 - m / 100)) * 100) / 100);
+                    setSellingPrice(CostCalculator.calculateSuggestedPrice(costPerUnit, m));
                   }
                 }}
                 className="w-full accent-amber-600 cursor-pointer"

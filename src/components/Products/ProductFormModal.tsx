@@ -19,11 +19,11 @@ import {
   UnitOfMeasure
 } from '../../types/bakery';
 import {
-  calculateIngredientRecipeCost,
   formatCurrency,
   formatPercent,
   getUnitLabel
 } from '../../utils/units';
+import { CostCalculator } from '../../domain/services/CostCalculator';
 
 interface ProductFormModalProps {
   product: Product | null; // null if creating new
@@ -91,31 +91,31 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Recalculate all recipe items dynamically based on current ingredient costs
-  const ingredientsCostSum = recipeItems.reduce((acc, item) => acc + item.calculatedCost, 0);
-  const totalBatchCost = Math.round((ingredientsCostSum + Number(otherDirectCosts || 0)) * 100) / 100;
+  // Recalculate all recipe items dynamically using CostCalculator
   const safeYield = Number(batchYieldUnits) > 0 ? Number(batchYieldUnits) : 1;
-  const costPerUnit = Math.round((totalBatchCost / safeYield) * 100) / 100;
-
-  // Profit and margin calculations
-  const profitPerUnit = Math.round((sellingPrice - costPerUnit) * 100) / 100;
-  const profitMarginPercent =
-    sellingPrice > 0 ? Math.round(((profitPerUnit / sellingPrice) * 100) * 10) / 10 : 0;
-  const totalBatchProfit = Math.round((profitPerUnit * safeYield) * 100) / 100;
-  const totalBatchRevenue = Math.round((sellingPrice * safeYield) * 100) / 100;
-
-  // Suggested selling price given desired margin
-  const suggestedPriceFromMargin =
-    targetMarginPercent < 100 && targetMarginPercent > 0
-      ? Math.round((costPerUnit / (1 - targetMarginPercent / 100)) * 100) / 100
-      : costPerUnit * 1.5;
+  const {
+    ingredientsCostSum,
+    totalBatchCost,
+    costPerUnit,
+    profitPerUnit,
+    profitMarginPercent,
+    totalBatchProfit,
+    totalBatchRevenue,
+    suggestedPrice: suggestedPriceFromMargin,
+  } = CostCalculator.calculateProductMetrics({
+    ingredients: recipeItems,
+    otherDirectCosts: Number(otherDirectCosts || 0),
+    batchYieldUnits: safeYield,
+    sellingPrice: Number(sellingPrice),
+    suggestedMarginPercent: Number(targetMarginPercent),
+  });
 
   const handleAddIngredient = () => {
     if (!selectedIngId || inputQty <= 0) return;
     const ingObj = ingredients.find((i) => i.id === selectedIngId);
     if (!ingObj) return;
 
-    const calculatedCost = calculateIngredientRecipeCost(
+    const calculatedCost = CostCalculator.calculateIngredientRecipeCost(
       inputQty,
       inputUnit,
       ingObj.purchasePackageQuantity,
@@ -147,7 +147,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   const handlePriceChange = (newPrice: number) => {
     setSellingPrice(newPrice);
     if (newPrice > 0 && costPerUnit > 0) {
-      const margin = ((newPrice - costPerUnit) / newPrice) * 100;
+      const margin = CostCalculator.calculateMargin(newPrice, costPerUnit);
       setTargetMarginPercent(Math.max(0, Math.round(margin)));
     }
   };
@@ -165,12 +165,8 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       otherDirectCosts: Number(otherDirectCosts || 0),
       batchYieldUnits: safeYield,
       yieldUnitName: yieldUnitName.trim() || 'unidades',
-      totalBatchCost,
-      costPerUnit,
       suggestedMarginPercent: Number(targetMarginPercent),
       sellingPrice: Number(sellingPrice),
-      profitPerUnit,
-      profitMarginPercent,
       notes: notes.trim(),
     };
 

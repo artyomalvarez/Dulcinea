@@ -17,7 +17,9 @@ import {
   DollarSign
 } from 'lucide-react';
 import { BusinessProfile, Ingredient, IngredientCategory, UnitOfMeasure } from '../../types/bakery';
-import { convertToBaseUnit, formatCurrency, getUnitLabel } from '../../utils/units';
+import { formatCurrency, getUnitLabel } from '../../utils/units';
+import { CostCalculator } from '../../domain/services/CostCalculator';
+import { StockService, normalizeCategoryName } from '../../domain/services/StockService';
 
 interface IngredientManagerProps {
   ingredients: Ingredient[];
@@ -98,13 +100,7 @@ export const CATEGORY_DEFINITIONS: {
   },
 ];
 
-// Helper to normalize legacy category names
-export function normalizeCategoryName(raw: string): IngredientCategory {
-  if (raw === 'Harinas y Granos') return 'Harinas y Polvos';
-  if (raw === 'Azúcares') return 'Azúcares y Endulzantes';
-  if (raw === 'Esencias y Frutas') return 'Esencias, Frutas y Sabores';
-  return (raw as IngredientCategory) || 'Otros';
-}
+export { normalizeCategoryName };
 
 export const IngredientManager: React.FC<IngredientManagerProps> = ({
   ingredients,
@@ -230,7 +226,7 @@ export const IngredientManager: React.FC<IngredientManagerProps> = ({
   };
 
   // Live preview unit cost in form modal
-  const liveBase = convertToBaseUnit(purchasePackageQuantity, purchasePackageUnit);
+  const liveBase = CostCalculator.convertToBaseUnit(purchasePackageQuantity, purchasePackageUnit);
   const liveCostPerBaseUnit = liveBase.baseValue > 0 ? purchaseCost / liveBase.baseValue : 0;
   const baseUnitDisplay =
     liveBase.baseType === 'mass' ? '1 gramo' : liveBase.baseType === 'volume' ? '1 ml' : '1 unidad';
@@ -424,15 +420,11 @@ export const IngredientManager: React.FC<IngredientManagerProps> = ({
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {items.map((ing) => {
-                      const base = convertToBaseUnit(ing.purchasePackageQuantity, ing.purchasePackageUnit);
+                      const base = CostCalculator.convertToBaseUnit(ing.purchasePackageQuantity, ing.purchasePackageUnit);
                       const costPerBaseUnit = base.baseValue > 0 ? ing.purchaseCost / base.baseValue : 0;
                       const unitText =
                         base.baseType === 'mass' ? '/ g' : base.baseType === 'volume' ? '/ ml' : '/ pza';
-                      const isLowStock =
-                        ing.minStockAlert !== undefined &&
-                        ing.minStockAlert > 0 &&
-                        ing.currentStock !== undefined &&
-                        ing.currentStock <= ing.minStockAlert;
+                      const isLowStock = StockService.isLowStock(ing);
 
                       return (
                         <tr key={ing.id} className="hover:bg-amber-50/30 transition-colors">
@@ -521,18 +513,14 @@ export const IngredientManager: React.FC<IngredientManagerProps> = ({
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filteredIngredients.map((ing) => {
-                  const base = convertToBaseUnit(ing.purchasePackageQuantity, ing.purchasePackageUnit);
+                  const base = CostCalculator.convertToBaseUnit(ing.purchasePackageQuantity, ing.purchasePackageUnit);
                   const costPerBaseUnit = base.baseValue > 0 ? ing.purchaseCost / base.baseValue : 0;
                   const unitText =
                     base.baseType === 'mass' ? '/ g' : base.baseType === 'volume' ? '/ ml' : '/ pza';
                   const catDef = CATEGORY_DEFINITIONS.find(
                     (c) => c.id === normalizeCategoryName(ing.category)
                   );
-                  const isLowStock =
-                    ing.minStockAlert !== undefined &&
-                    ing.minStockAlert > 0 &&
-                    ing.currentStock !== undefined &&
-                    ing.currentStock <= ing.minStockAlert;
+                  const isLowStock = StockService.isLowStock(ing);
 
                   return (
                     <tr key={ing.id} className="hover:bg-amber-50/30 transition-colors">

@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { BusinessProfile, ProductionBatch, Sale } from '../../types/bakery';
 import { formatCurrency, formatPercent } from '../../utils/units';
+import { AnalyticsService, MonthlyProfitabilityPoint } from '../../domain/services/AnalyticsService';
 
 interface MonthlyComparisonChartProps {
   sales: Sale[];
@@ -34,16 +35,7 @@ interface MonthlyComparisonChartProps {
   onOpenReport?: () => void;
 }
 
-interface MonthlyDataPoint {
-  monthKey: string; // e.g. "2026-06"
-  label: string; // e.g. "Jun 2026"
-  ventasTotales: number;
-  costosTotales: number;
-  utilidadNeta: number;
-  margenPorcentaje: number;
-  unidadesVendidas: number;
-  lotesElaborados: number;
-}
+type MonthlyDataPoint = MonthlyProfitabilityPoint;
 
 export const MonthlyComparisonChart: React.FC<MonthlyComparisonChartProps> = ({
   sales,
@@ -54,75 +46,9 @@ export const MonthlyComparisonChart: React.FC<MonthlyComparisonChartProps> = ({
   const [chartType, setChartType] = useState<'barras' | 'area'>('barras');
   const [costBasis, setCostBasis] = useState<'lotes' | 'ventas'>('lotes');
 
-  // Month names in Spanish
-  const monthNames = [
-    'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-    'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
-  ];
-
-  // Process and group monthly data
+  // Process and group monthly data via AnalyticsService
   const monthlyData: MonthlyDataPoint[] = useMemo(() => {
-    const map = new Map<string, {
-      ventas: number;
-      costoLotes: number;
-      costoVentas: number;
-      unidades: number;
-      lotes: number;
-    }>();
-
-    // Group sales by YYYY-MM
-    sales.forEach((s) => {
-      if (!s.date) return;
-      const key = s.date.slice(0, 7); // "YYYY-MM"
-      const current = map.get(key) || { ventas: 0, costoLotes: 0, costoVentas: 0, unidades: 0, lotes: 0 };
-      current.ventas += s.subtotal || 0;
-      current.costoVentas += s.totalCost || 0;
-      const unitsCount = s.items.reduce((acc, it) => acc + (it.quantity || 0), 0);
-      current.unidades += unitsCount;
-      map.set(key, current);
-    });
-
-    // Group batches by YYYY-MM
-    batches.forEach((b) => {
-      if (!b.date) return;
-      const key = b.date.slice(0, 7); // "YYYY-MM"
-      const current = map.get(key) || { ventas: 0, costoLotes: 0, costoVentas: 0, unidades: 0, lotes: 0 };
-      current.costoLotes += b.totalSuppliesCost || 0;
-      current.lotes += b.numberOfBatches || 1;
-      map.set(key, current);
-    });
-
-    // Sort keys chronologically
-    const sortedKeys = Array.from(map.keys()).sort();
-
-    return sortedKeys.map((key) => {
-      const entry = map.get(key)!;
-      const [year, monthStr] = key.split('-');
-      const monthIdx = parseInt(monthStr, 10) - 1;
-      const label = `${monthNames[monthIdx] || monthStr} ${year}`;
-
-      const costosTotales = Math.round(
-        (costBasis === 'lotes' ? entry.costoLotes : entry.costoVentas) * 100
-      ) / 100;
-
-      const ventasTotales = Math.round(entry.ventas * 100) / 100;
-      const utilidadNeta = Math.round((ventasTotales - costosTotales) * 100) / 100;
-      const margenPorcentaje =
-        ventasTotales > 0
-          ? Math.round(((utilidadNeta / ventasTotales) * 100) * 10) / 10
-          : 0;
-
-      return {
-        monthKey: key,
-        label,
-        ventasTotales,
-        costosTotales,
-        utilidadNeta,
-        margenPorcentaje,
-        unidadesVendidas: entry.unidades,
-        lotesElaborados: entry.lotes,
-      };
-    });
+    return AnalyticsService.groupMonthlyProfitability(sales, batches, costBasis, false);
   }, [sales, batches, costBasis]);
 
   // Overall totals in the period

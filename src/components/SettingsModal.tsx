@@ -12,7 +12,10 @@ import {
   FileText
 } from 'lucide-react';
 import { BusinessProfile } from '../types/bakery';
-import { storage } from '../utils/storage';
+import { storageAdapter } from '../infrastructure/storage/LocalStorageAdapter';
+import { BackupUseCases } from '../application/useCases';
+
+const backupUseCases = new BackupUseCases(storageAdapter);
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -99,7 +102,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   const handleDownloadBackup = () => {
-    const jsonStr = storage.exportBackup();
+    const jsonStr = backupUseCases.exportBackup();
     const blob = new Blob([jsonStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -111,7 +114,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const handleImportBackup = () => {
     if (!importText.trim()) return;
-    const ok = storage.importBackup(importText.trim());
+    const ok = backupUseCases.importBackup(importText.trim());
     if (ok) {
       setImportStatus('success');
       onDataReload();
@@ -130,7 +133,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         '¿Deseas restablecer los datos de ejemplo del taller de repostería? Esto recargará las recetas modelo de pastel, galletas y cupcakes.'
       )
     ) {
-      storage.resetToDefaults();
+      backupUseCases.resetToDefaults();
       onDataReload();
       onClose();
     }

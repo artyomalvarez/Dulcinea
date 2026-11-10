@@ -26,6 +26,9 @@ import {
 } from 'lucide-react';
 import { BusinessProfile, Product, ProductionBatch, Sale, Ingredient } from '../types/bakery';
 import { formatCurrency, formatPercent } from '../utils/units';
+import { CostCalculator } from '../domain/services/CostCalculator';
+import { StockService } from '../domain/services/StockService';
+import { AnalyticsService } from '../domain/services/AnalyticsService';
 import { MonthlyComparisonChart } from './Dashboard/MonthlyComparisonChart';
 import { ProfitabilityReportModal } from './Dashboard/ProfitabilityReportModal';
 
@@ -56,24 +59,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [copiedShoppingList, setCopiedShoppingList] = useState(false);
 
-  // Low stock ingredients computation
-  const lowStockIngredients = ingredients.filter((ing) => {
-    if (ing.minStockAlert === undefined || ing.minStockAlert <= 0) return false;
-    const current = ing.currentStock ?? 0;
-    return current <= ing.minStockAlert;
-  });
-
-  // Calculate estimated replenishment cost
-  const totalEstimatedRestockCost = lowStockIngredients.reduce((total, ing) => {
-    const current = ing.currentStock ?? 0;
-    const deficit = Math.max(0, (ing.minStockAlert ?? 0) - current);
-    const packagesNeeded = Math.ceil(deficit / (ing.purchasePackageQuantity || 1));
-    return total + packagesNeeded * ing.purchaseCost;
-  }, 0);
+  // Low stock ingredients & shopping list via StockService
+  const { items: shoppingListItems, totalEstimatedRestockCost } =
+    StockService.buildShoppingList(ingredients);
+  const lowStockIngredients = shoppingListItems.map((it) => it.ingredient);
 
   // Handle copy shopping list to clipboard
   const handleCopyShoppingList = () => {
-    if (lowStockIngredients.length === 0) return;
+    if (shoppingListItems.length === 0) return;
 
     const dateStr = new Date().toLocaleDateString('es-ES', {
       day: '2-digit',
@@ -83,17 +76,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
     let text = `🛒 LISTA DE COMPRAS - ${business.businessName || 'Mi Repostería'}\n`;
     text += `Fecha: ${dateStr}\n`;
-    text += `Insumos críticos con bajo stock (${lowStockIngredients.length} ítems):\n`;
+    text += `Insumos críticos con bajo stock (${shoppingListItems.length} ítems):\n`;
     text += `--------------------------------------------------\n\n`;
 
-    lowStockIngredients.forEach((ing, idx) => {
-      const current = ing.currentStock ?? 0;
-      const min = ing.minStockAlert ?? 0;
-      const deficit = Math.max(0, min - current);
+    shoppingListItems.forEach((item, idx) => {
+      const {
+        ingredient: ing,
+        currentStock: current,
+        minStockAlert: min,
+        deficit,
+        packagesNeeded,
+        estimatedCost: cost,
+      } = item;
       const pkgQty = ing.purchasePackageQuantity || 1;
       const unitStr = ing.purchasePackageUnit;
-      const packagesNeeded = Math.ceil(deficit / pkgQty);
-      const cost = packagesNeeded * ing.purchaseCost;
 
       text += `${idx + 1}. ${ing.name} [${ing.category || 'General'}]\n`;
       text += `   - Stock actual: ${current.toLocaleString()} ${unitStr}\n`;
@@ -110,22 +106,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
     setTimeout(() => setCopiedShoppingList(false), 3000);
   };
 
-  // Aggregate Metrics
-  const totalSalesRevenue = sales.reduce((acc, s) => acc + s.subtotal, 0);
-  const totalProductionCost = batches.reduce((acc, b) => acc + b.totalSuppliesCost, 0);
-  const totalCostOfSoldItems = sales.reduce((acc, s) => acc + s.totalCost, 0);
-  const totalNetProfit = sales.reduce((acc, s) => acc + s.netProfit, 0);
-
-  const averageMargin =
-    totalSalesRevenue > 0
-      ? (totalNetProfit / totalSalesRevenue) * 100
-      : 0;
-
-  const totalUnitsProduced = batches.reduce((acc, b) => acc + b.totalUnitsProduced, 0);
-  const totalUnitsSold = batches.reduce((acc, b) => acc + b.unitsSold, 0);
-
-  // Products with margin < 40% (alert)
-  const lowMarginProducts = products.filter((p) => p.profitMarginPercent < 40);
+  // Aggregate Metrics via AnalyticsService
+  const {
+    totalSalesRevenue,
+    totalProductionCost,
+    totalCostOfSoldItems,
+    totalNetProfit,
+    averageMargin,
+    totalUnitsProduced,
+    totalUnitsSold,
+    lowMarginProducts,
+  } = AnalyticsService.calculateDashboardMetrics(sales, batches, products, 40);
 
   return (
     <div className="space-y-6 pb-12">
@@ -326,15 +317,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
           {/* Cards for each low stock ingredient */}
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {lowStockIngredients.map((ing) => {
-              const current = ing.currentStock ?? 0;
-              const min = ing.minStockAlert ?? 0;
-              const deficit = Math.max(0, min - current);
+            {shoppingListItems.map((item) => {
+              const {
+                ingredient: ing,
+                currentStock: current,
+                minStockAlert: min,
+                deficit,
+                packagesNeeded,
+                estimatedCost,
+                percentOfMin,
+              } = item;
               const pkgQty = ing.purchasePackageQuantity || 1;
               const unitStr = ing.purchasePackageUnit;
-              const packagesNeeded = Math.ceil(deficit / pkgQty);
-              const estimatedCost = packagesNeeded * ing.purchaseCost;
-              const percentOfMin = min > 0 ? Math.min(100, Math.round((current / min) * 100)) : 0;
 
               return (
                 <div
@@ -561,7 +555,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {products.map((p) => {
-                  const isHealthy = p.profitMarginPercent >= 50;
+                  const metrics = CostCalculator.calculateProductMetrics(p);
+                  const isHealthy = metrics.profitMarginPercent >= 50;
                   return (
                     <tr key={p.id} className="hover:bg-amber-50/40 transition-colors">
                       <td className="py-3 pr-2">
@@ -572,13 +567,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         {p.batchYieldUnits} {p.yieldUnitName}
                       </td>
                       <td className="py-3 text-right font-mono text-gray-700 font-medium">
-                        {formatCurrency(p.costPerUnit, business.currencySymbol)}
+                        {formatCurrency(metrics.costPerUnit, business.currencySymbol)}
                       </td>
                       <td className="py-3 text-right font-mono text-gray-900 font-bold">
                         {formatCurrency(p.sellingPrice, business.currencySymbol)}
                       </td>
                       <td className="py-3 text-right font-mono text-emerald-700 font-bold">
-                        +{formatCurrency(p.profitPerUnit, business.currencySymbol)}
+                        +{formatCurrency(metrics.profitPerUnit, business.currencySymbol)}
                       </td>
                       <td className="py-3 text-right">
                         <span
@@ -588,7 +583,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                               : 'bg-amber-50 text-amber-800 border border-amber-200'
                           }`}
                         >
-                          {formatPercent(p.profitMarginPercent)}
+                          {formatPercent(metrics.profitMarginPercent)}
                         </span>
                       </td>
                     </tr>

@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { BusinessProfile, Product, ProductionBatch, Sale, SaleItem } from '../../types/bakery';
 import { formatCurrency, formatPercent } from '../../utils/units';
+import { CostCalculator } from '../../domain/services/CostCalculator';
+import { SalesService } from '../../domain/services/SalesService';
 
 interface SalesListProps {
   sales: Sale[];
@@ -65,6 +67,12 @@ export const SalesList: React.FC<SalesListProps> = ({
   React.useEffect(() => {
     if (isOpenModal) {
       if (preselectedProduct) {
+        const metrics = CostCalculator.calculateProductMetrics(preselectedProduct);
+        const itemTotals = SalesService.calculateSaleItemTotals({
+          quantity: 1,
+          unitCost: metrics.costPerUnit,
+          unitPrice: preselectedProduct.sellingPrice,
+        });
         setSelectedProductId(preselectedProduct.id);
         setCustomPrice(preselectedProduct.sellingPrice);
         setQuantity(1);
@@ -73,12 +81,10 @@ export const SalesList: React.FC<SalesListProps> = ({
             productId: preselectedProduct.id,
             productName: preselectedProduct.name,
             quantity: 1,
-            unitCost: preselectedProduct.costPerUnit,
+            unitCost: metrics.costPerUnit,
             unitPrice: preselectedProduct.sellingPrice,
-            totalCost: preselectedProduct.costPerUnit,
-            totalPrice: preselectedProduct.sellingPrice,
-            unitProfit: preselectedProduct.profitPerUnit,
-            totalProfit: preselectedProduct.profitPerUnit,
+            totalPrice: itemTotals.totalPrice,
+            unitProfit: itemTotals.unitProfit,
           },
         ]);
       } else if (products.length > 0) {
@@ -109,11 +115,12 @@ export const SalesList: React.FC<SalesListProps> = ({
     if (!prod) return;
 
     const unitPrice = customPrice > 0 ? customPrice : prod.sellingPrice;
-    const unitCost = prod.costPerUnit;
-    const totalPrice = unitPrice * quantity;
-    const totalCost = unitCost * quantity;
-    const unitProfit = unitPrice - unitCost;
-    const totalProfit = totalPrice - totalCost;
+    const { costPerUnit: unitCost } = CostCalculator.calculateProductMetrics(prod);
+    const { totalPrice, unitProfit } = SalesService.calculateSaleItemTotals({
+      quantity: Number(quantity),
+      unitCost,
+      unitPrice,
+    });
 
     const newItem: SaleItem = {
       productId: prod.id,
@@ -121,10 +128,8 @@ export const SalesList: React.FC<SalesListProps> = ({
       quantity: Number(quantity),
       unitCost,
       unitPrice,
-      totalCost,
       totalPrice,
       unitProfit,
-      totalProfit,
     };
 
     setSaleItems([...saleItems, newItem]);
@@ -135,13 +140,10 @@ export const SalesList: React.FC<SalesListProps> = ({
     setSaleItems(saleItems.filter((_, i) => i !== index));
   };
 
-  // Calculations for current sale
-  const subtotal = saleItems.reduce((acc, item) => acc + item.totalPrice, 0);
-  const totalCost = saleItems.reduce((acc, item) => acc + item.totalCost, 0);
-  const netProfit = subtotal - totalCost;
+  // Calculations for current sale using SalesService
   const taxRate = business.defaultTaxRate || 0;
-  const taxAmount = Math.round((subtotal * (taxRate / 100)) * 100) / 100;
-  const totalAmount = subtotal + taxAmount;
+  const { subtotal, totalCost, netProfit, taxAmount, totalAmount } =
+    SalesService.calculateSaleTotals(saleItems, taxRate);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -425,11 +427,14 @@ export const SalesList: React.FC<SalesListProps> = ({
                       onChange={(e) => handleProductChange(e.target.value)}
                       className="w-full px-3 py-2 rounded-xl border border-amber-200 bg-white text-xs focus:outline-none focus:border-amber-500"
                     >
-                      {products.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name} (Costo: {formatCurrency(p.costPerUnit, business.currencySymbol)} | Venta: {formatCurrency(p.sellingPrice, business.currencySymbol)})
-                        </option>
-                      ))}
+                      {products.map((p) => {
+                        const { costPerUnit } = CostCalculator.calculateProductMetrics(p);
+                        return (
+                          <option key={p.id} value={p.id}>
+                            {p.name} (Costo: {formatCurrency(costPerUnit, business.currencySymbol)} | Venta: {formatCurrency(p.sellingPrice, business.currencySymbol)})
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
 
@@ -490,32 +495,35 @@ export const SalesList: React.FC<SalesListProps> = ({
                           </td>
                         </tr>
                       ) : (
-                        saleItems.map((item, idx) => (
-                          <tr key={idx} className="hover:bg-gray-50">
-                            <td className="py-2.5 px-3 font-semibold text-gray-800">{item.productName}</td>
-                            <td className="py-2.5 px-3 text-center font-mono font-bold text-gray-900">
-                              {item.quantity}
-                            </td>
-                            <td className="py-2.5 px-3 text-right font-mono text-gray-700">
-                              {formatCurrency(item.unitPrice, business.currencySymbol)}
-                            </td>
-                            <td className="py-2.5 px-3 text-right font-mono font-bold text-gray-900">
-                              {formatCurrency(item.totalPrice, business.currencySymbol)}
-                            </td>
-                            <td className="py-2.5 px-3 text-right font-mono font-bold text-emerald-700">
-                              +{formatCurrency(item.totalProfit, business.currencySymbol)}
-                            </td>
-                            <td className="py-2.5 px-3 text-center">
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveItem(idx)}
-                                className="text-gray-400 hover:text-rose-600 p-1"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </td>
-                          </tr>
-                        ))
+                        saleItems.map((item, idx) => {
+                          const itemTotals = SalesService.calculateSaleItemTotals(item);
+                          return (
+                            <tr key={idx} className="hover:bg-gray-50">
+                              <td className="py-2.5 px-3 font-semibold text-gray-800">{item.productName}</td>
+                              <td className="py-2.5 px-3 text-center font-mono font-bold text-gray-900">
+                                {item.quantity}
+                              </td>
+                              <td className="py-2.5 px-3 text-right font-mono text-gray-700">
+                                {formatCurrency(item.unitPrice, business.currencySymbol)}
+                              </td>
+                              <td className="py-2.5 px-3 text-right font-mono font-bold text-gray-900">
+                                {formatCurrency(itemTotals.totalPrice, business.currencySymbol)}
+                              </td>
+                              <td className="py-2.5 px-3 text-right font-mono font-bold text-emerald-700">
+                                +{formatCurrency(itemTotals.totalProfit, business.currencySymbol)}
+                              </td>
+                              <td className="py-2.5 px-3 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveItem(idx)}
+                                  className="text-gray-400 hover:text-rose-600 p-1"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })
                       )}
                     </tbody>
                   </table>

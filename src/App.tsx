@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   BusinessProfile,
   Ingredient,
@@ -12,7 +12,22 @@ import {
   ProductionBatch,
   Sale
 } from './types/bakery';
-import { storage } from './utils/storage';
+import { storageAdapter } from './infrastructure/storage/LocalStorageAdapter';
+import {
+  LoadAppDataUseCase,
+  SaveProductUseCase,
+  DeleteProductUseCase,
+  SaveIngredientUseCase,
+  DeleteIngredientUseCase,
+  SaveBatchUseCase,
+  DeleteBatchUseCase,
+  SaveSaleUseCase,
+  DeleteSaleUseCase,
+  SaveInvoiceUseCase,
+  DeleteInvoiceUseCase,
+  UpdateInvoiceStatusUseCase,
+  SaveBusinessProfileUseCase,
+} from './application/useCases';
 import { Header, ActiveTab } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { ProductList } from './components/Products/ProductList';
@@ -26,17 +41,32 @@ import { InvoiceViewer } from './components/Invoices/InvoiceViewer';
 import { ProfitabilityCalculatorModal } from './components/Profitability/ProfitabilityCalculatorModal';
 import { SettingsModal } from './components/SettingsModal';
 
+const loadAppDataUseCase = new LoadAppDataUseCase(storageAdapter);
+const saveProductUseCase = new SaveProductUseCase(storageAdapter);
+const deleteProductUseCase = new DeleteProductUseCase(storageAdapter);
+const saveIngredientUseCase = new SaveIngredientUseCase(storageAdapter);
+const deleteIngredientUseCase = new DeleteIngredientUseCase(storageAdapter);
+const saveBatchUseCase = new SaveBatchUseCase(storageAdapter);
+const deleteBatchUseCase = new DeleteBatchUseCase(storageAdapter);
+const saveSaleUseCaseInstance = new SaveSaleUseCase(storageAdapter);
+const deleteSaleUseCaseInstance = new DeleteSaleUseCase(storageAdapter);
+const saveInvoiceUseCase = new SaveInvoiceUseCase(storageAdapter);
+const deleteInvoiceUseCase = new DeleteInvoiceUseCase(storageAdapter);
+const updateInvoiceStatusUseCase = new UpdateInvoiceStatusUseCase(storageAdapter);
+const saveBusinessProfileUseCase = new SaveBusinessProfileUseCase(storageAdapter);
+
 export default function App() {
   // Navigation
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
 
-  // Application Data
-  const [business, setBusiness] = useState<BusinessProfile>(() => storage.getBusinessProfile());
-  const [ingredients, setIngredients] = useState<Ingredient[]>(() => storage.getIngredients());
-  const [products, setProducts] = useState<Product[]>(() => storage.getProducts());
-  const [batches, setBatches] = useState<ProductionBatch[]>(() => storage.getBatches());
-  const [sales, setSales] = useState<Sale[]>(() => storage.getSales());
-  const [invoices, setInvoices] = useState<Invoice[]>(() => storage.getInvoices());
+  // Application Data initialized via UseCase
+  const [initialSnapshot] = useState(() => loadAppDataUseCase.execute());
+  const [business, setBusiness] = useState<BusinessProfile>(initialSnapshot.business);
+  const [ingredients, setIngredients] = useState<Ingredient[]>(initialSnapshot.ingredients);
+  const [products, setProducts] = useState<Product[]>(initialSnapshot.products);
+  const [batches, setBatches] = useState<ProductionBatch[]>(initialSnapshot.batches);
+  const [sales, setSales] = useState<Sale[]>(initialSnapshot.sales);
+  const [invoices, setInvoices] = useState<Invoice[]>(initialSnapshot.invoices);
 
   // Modal States
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -59,120 +89,69 @@ export default function App() {
 
   const [isCalculatorModalOpen, setIsCalculatorModalOpen] = useState(false);
 
-  // Sync to localStorage
+  // Sync from storage via UseCase
   const reloadDataFromStorage = () => {
-    setBusiness(storage.getBusinessProfile());
-    setIngredients(storage.getIngredients());
-    setProducts(storage.getProducts());
-    setBatches(storage.getBatches());
-    setSales(storage.getSales());
-    setInvoices(storage.getInvoices());
+    const snapshot = loadAppDataUseCase.execute();
+    setBusiness(snapshot.business);
+    setIngredients(snapshot.ingredients);
+    setProducts(snapshot.products);
+    setBatches(snapshot.batches);
+    setSales(snapshot.sales);
+    setInvoices(snapshot.invoices);
   };
 
-  // Products CRUD
+  // Products CRUD via UseCases
   const handleSaveProduct = (newProd: Product) => {
-    const existingIndex = products.findIndex((p) => p.id === newProd.id);
-    let updated: Product[];
-    if (existingIndex >= 0) {
-      updated = products.map((p) => (p.id === newProd.id ? newProd : p));
-    } else {
-      updated = [newProd, ...products];
-    }
+    const updated = saveProductUseCase.execute(newProd);
     setProducts(updated);
-    storage.saveProducts(updated);
   };
 
   const handleDeleteProduct = (id: string) => {
-    const updated = products.filter((p) => p.id !== id);
+    const updated = deleteProductUseCase.execute(id);
     setProducts(updated);
-    storage.saveProducts(updated);
   };
 
-  // Ingredients CRUD
+  // Ingredients CRUD via UseCases
   const handleSaveIngredient = (newIng: Ingredient) => {
-    const existingIndex = ingredients.findIndex((i) => i.id === newIng.id);
-    let updated: Ingredient[];
-    if (existingIndex >= 0) {
-      updated = ingredients.map((i) => (i.id === newIng.id ? newIng : i));
-    } else {
-      updated = [newIng, ...ingredients];
-    }
+    const updated = saveIngredientUseCase.execute(newIng);
     setIngredients(updated);
-    storage.saveIngredients(updated);
   };
 
   const handleDeleteIngredient = (id: string) => {
-    const updated = ingredients.filter((i) => i.id !== id);
+    const updated = deleteIngredientUseCase.execute(id);
     setIngredients(updated);
-    storage.saveIngredients(updated);
   };
 
-  // Batches CRUD
+  // Batches CRUD via UseCases
   const handleSaveBatch = (newBatch: ProductionBatch) => {
-    const updated = [newBatch, ...batches];
+    const updated = saveBatchUseCase.execute(newBatch);
     setBatches(updated);
-    storage.saveBatches(updated);
   };
 
   const handleDeleteBatch = (id: string) => {
-    const updated = batches.filter((b) => b.id !== id);
+    const updated = deleteBatchUseCase.execute(id);
     setBatches(updated);
-    storage.saveBatches(updated);
   };
 
-  // Sales CRUD
+  // Sales CRUD via UseCases (Immutable multi-batch stock deduction & restoration)
   const handleSaveSale = (newSale: Sale) => {
-    const updatedSales = [newSale, ...sales];
-    setSales(updatedSales);
-    storage.saveSales(updatedSales);
-
-    // Update batch units sold if matches products
-    newSale.items.forEach((item) => {
-      const activeBatch = batches.find(
-        (b) => b.productId === item.productId && b.unitsSold < b.totalUnitsProduced
-      );
-      if (activeBatch) {
-        activeBatch.unitsSold = Math.min(
-          activeBatch.totalUnitsProduced,
-          activeBatch.unitsSold + item.quantity
-        );
-        if (activeBatch.unitsSold >= activeBatch.totalUnitsProduced) {
-          activeBatch.status = 'agotado';
-        }
-      }
-    });
-    setBatches([...batches]);
-    storage.saveBatches(batches);
+    const result = saveSaleUseCaseInstance.execute(newSale);
+    setSales(result.sales);
+    setBatches(result.batches);
   };
 
   const handleDeleteSale = (id: string) => {
-    const updated = sales.filter((s) => s.id !== id);
-    setSales(updated);
-    storage.saveSales(updated);
+    const result = deleteSaleUseCaseInstance.execute(id);
+    setSales(result.sales);
+    setBatches(result.batches);
   };
 
-  // Invoices CRUD
+  // Invoices CRUD via UseCases
   const handleSaveInvoice = (newInv: Invoice) => {
-    const updated = [newInv, ...invoices];
-    setInvoices(updated);
-    storage.saveInvoices(updated);
-
-    // Increment business next invoice number
-    const updatedBiz: BusinessProfile = {
-      ...business,
-      nextInvoiceNumber: (business.nextInvoiceNumber || 100) + 1,
-    };
-    setBusiness(updatedBiz);
-    storage.saveBusinessProfile(updatedBiz);
-
-    // If linked to a sale, update sale invoiceId
-    if (newInv.saleId) {
-      const updatedSales = sales.map((s) =>
-        s.id === newInv.saleId ? { ...s, invoiceId: newInv.id } : s
-      );
-      setSales(updatedSales);
-      storage.saveSales(updatedSales);
-    }
+    const result = saveInvoiceUseCase.execute(newInv);
+    setInvoices(result.invoices);
+    setBusiness(result.business);
+    setSales(result.sales);
 
     // Immediately open viewer for print / PDF
     setViewingInvoice(newInv);
@@ -180,24 +159,22 @@ export default function App() {
   };
 
   const handleDeleteInvoice = (id: string) => {
-    const updated = invoices.filter((i) => i.id !== id);
+    const updated = deleteInvoiceUseCase.execute(id);
     setInvoices(updated);
-    storage.saveInvoices(updated);
   };
 
   const handleUpdateInvoiceStatus = (id: string, status: Invoice['status']) => {
-    const updated = invoices.map((inv) => (inv.id === id ? { ...inv, status } : inv));
+    const updated = updateInvoiceStatusUseCase.execute(id, status);
     setInvoices(updated);
-    storage.saveInvoices(updated);
     if (viewingInvoice && viewingInvoice.id === id) {
       setViewingInvoice({ ...viewingInvoice, status });
     }
   };
 
-  // Business profile save
+  // Business profile save via UseCase
   const handleSaveBusiness = (newBiz: BusinessProfile) => {
-    setBusiness(newBiz);
-    storage.saveBusinessProfile(newBiz);
+    const updated = saveBusinessProfileUseCase.execute(newBiz);
+    setBusiness(updated);
   };
 
   // Actions from various components

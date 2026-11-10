@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { BusinessProfile, Product } from '../../types/bakery';
 import { formatCurrency, formatPercent } from '../../utils/units';
+import { CostCalculator } from '../../domain/services/CostCalculator';
 import { RecipeBookPdfModal } from './RecipeBookPdfModal';
 
 interface ProductListProps {
@@ -132,7 +133,8 @@ export const ProductList: React.FC<ProductListProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {filtered.map((product) => {
             const isExpanded = expandedRecipeId === product.id;
-            const isHealthy = product.profitMarginPercent >= 50;
+            const metrics = CostCalculator.calculateProductMetrics(product);
+            const isHealthy = metrics.profitMarginPercent >= 50;
 
             return (
               <div
@@ -189,7 +191,7 @@ export const ProductList: React.FC<ProductListProps> = ({
                     <div>
                       <span className="text-[9px] uppercase font-bold text-gray-400 block">Costo / U</span>
                       <span className="text-xs font-mono font-bold text-gray-800 mt-0.5 block">
-                        {formatCurrency(product.costPerUnit, business.currencySymbol)}
+                        {formatCurrency(metrics.costPerUnit, business.currencySymbol)}
                       </span>
                     </div>
 
@@ -203,7 +205,7 @@ export const ProductList: React.FC<ProductListProps> = ({
                     <div>
                       <span className="text-[9px] uppercase font-bold text-emerald-800 block">Utilidad / U</span>
                       <span className="text-xs font-mono font-bold text-emerald-700 mt-0.5 block">
-                        +{formatCurrency(product.profitPerUnit, business.currencySymbol)}
+                        +{formatCurrency(metrics.profitPerUnit, business.currencySymbol)}
                       </span>
                     </div>
 
@@ -214,7 +216,7 @@ export const ProductList: React.FC<ProductListProps> = ({
                           isHealthy ? 'text-emerald-700' : 'text-amber-800'
                         }`}
                       >
-                        {formatPercent(product.profitMarginPercent)}
+                        {formatPercent(metrics.profitMarginPercent)}
                       </span>
                     </div>
                   </div>
@@ -222,10 +224,10 @@ export const ProductList: React.FC<ProductListProps> = ({
                   {/* Batch summary details */}
                   <div className="text-[11px] text-gray-500 flex items-center justify-between border-t border-gray-100 pt-2">
                     <span>
-                      Costo total del lote: <strong>{formatCurrency(product.totalBatchCost, business.currencySymbol)}</strong>
+                      Costo total del lote: <strong>{formatCurrency(metrics.totalBatchCost, business.currencySymbol)}</strong>
                     </span>
                     <span className="text-emerald-700 font-semibold">
-                      Ganancia por lote: +{formatCurrency(product.profitPerUnit * product.batchYieldUnits, business.currencySymbol)}
+                      Ganancia por lote: +{formatCurrency(metrics.totalBatchProfit, business.currencySymbol)}
                     </span>
                   </div>
 

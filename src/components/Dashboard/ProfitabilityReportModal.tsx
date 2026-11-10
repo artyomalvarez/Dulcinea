@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { BusinessProfile, Product, ProductionBatch, Sale } from '../../types/bakery';
 import { formatCurrency, formatPercent } from '../../utils/units';
+import { AnalyticsService } from '../../domain/services/AnalyticsService';
+import { CostCalculator } from '../../domain/services/CostCalculator';
 
 interface ProfitabilityReportModalProps {
   isOpen: boolean;
@@ -35,69 +37,9 @@ export const ProfitabilityReportModal: React.FC<ProfitabilityReportModalProps> =
 }) => {
   const [costBasis, setCostBasis] = useState<'lotes' | 'ventas'>('lotes');
 
-  const monthNames = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-  ];
-
-  // Group monthly consolidated data
+  // Group monthly consolidated data via AnalyticsService
   const monthlyData = useMemo(() => {
-    const map = new Map<string, {
-      ventas: number;
-      costoLotes: number;
-      costoVentas: number;
-      unidades: number;
-      lotes: number;
-    }>();
-
-    sales.forEach((s) => {
-      if (!s.date) return;
-      const key = s.date.slice(0, 7);
-      const current = map.get(key) || { ventas: 0, costoLotes: 0, costoVentas: 0, unidades: 0, lotes: 0 };
-      current.ventas += s.subtotal || 0;
-      current.costoVentas += s.totalCost || 0;
-      current.unidades += s.items.reduce((acc, it) => acc + (it.quantity || 0), 0);
-      map.set(key, current);
-    });
-
-    batches.forEach((b) => {
-      if (!b.date) return;
-      const key = b.date.slice(0, 7);
-      const current = map.get(key) || { ventas: 0, costoLotes: 0, costoVentas: 0, unidades: 0, lotes: 0 };
-      current.costoLotes += b.totalSuppliesCost || 0;
-      current.lotes += b.numberOfBatches || 1;
-      map.set(key, current);
-    });
-
-    const sortedKeys = Array.from(map.keys()).sort();
-
-    return sortedKeys.map((key) => {
-      const entry = map.get(key)!;
-      const [year, monthStr] = key.split('-');
-      const monthIdx = parseInt(monthStr, 10) - 1;
-      const label = `${monthNames[monthIdx] || monthStr} ${year}`;
-
-      const costosTotales = Math.round(
-        (costBasis === 'lotes' ? entry.costoLotes : entry.costoVentas) * 100
-      ) / 100;
-      const ventasTotales = Math.round(entry.ventas * 100) / 100;
-      const utilidadNeta = Math.round((ventasTotales - costosTotales) * 100) / 100;
-      const margenPorcentaje =
-        ventasTotales > 0
-          ? Math.round(((utilidadNeta / ventasTotales) * 100) * 10) / 10
-          : 0;
-
-      return {
-        key,
-        label,
-        ventasTotales,
-        costosTotales,
-        utilidadNeta,
-        margenPorcentaje,
-        unidadesVendidas: entry.unidades,
-        lotesElaborados: entry.lotes,
-      };
-    });
+    return AnalyticsService.groupMonthlyProfitability(sales, batches, costBasis, true);
   }, [sales, batches, costBasis]);
 
   // Aggregate totals
@@ -108,30 +50,9 @@ export const ProfitabilityReportModal: React.FC<ProfitabilityReportModalProps> =
   const totalUnitsSold = monthlyData.reduce((acc, m) => acc + m.unidadesVendidas, 0);
   const totalBatchesCount = monthlyData.reduce((acc, m) => acc + m.lotesElaborados, 0);
 
-  // Per-product performance consolidation
+  // Per-product performance consolidation via AnalyticsService
   const productPerformance = useMemo(() => {
-    return products.map((p) => {
-      let unitsSold = 0;
-      let revenue = 0;
-      let profit = 0;
-
-      sales.forEach((s) => {
-        s.items.forEach((it) => {
-          if (it.productId === p.id) {
-            unitsSold += it.quantity;
-            revenue += it.totalPrice;
-            profit += it.totalProfit;
-          }
-        });
-      });
-
-      return {
-        product: p,
-        unitsSold,
-        revenue,
-        profit,
-      };
-    });
+    return AnalyticsService.calculateProductPerformance(products, sales);
   }, [products, sales]);
 
   if (!isOpen) return null;
@@ -387,33 +308,36 @@ export const ProfitabilityReportModal: React.FC<ProfitabilityReportModalProps> =
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {productPerformance.map(({ product: p, unitsSold, profit }) => (
-                    <tr key={p.id} className="hover:bg-gray-50/50">
-                      <td className="py-2 px-3 font-semibold text-gray-900">{p.name}</td>
-                      <td className="py-2 px-3 text-gray-600">{p.category}</td>
-                      <td className="py-2 px-3 text-center text-gray-600 font-mono">
-                        {p.batchYieldUnits} {p.yieldUnitName}
-                      </td>
-                      <td className="py-2 px-3 text-right font-mono text-gray-600">
-                        {formatCurrency(p.costPerUnit, business.currencySymbol)}
-                      </td>
-                      <td className="py-2 px-3 text-right font-mono font-bold text-gray-900">
-                        {formatCurrency(p.sellingPrice, business.currencySymbol)}
-                      </td>
-                      <td className="py-2 px-3 text-right font-mono font-bold text-emerald-700">
-                        +{formatCurrency(p.profitPerUnit, business.currencySymbol)}
-                      </td>
-                      <td className="py-2 px-3 text-right font-bold text-amber-900">
-                        {formatPercent(p.profitMarginPercent)}
-                      </td>
-                      <td className="py-2 px-3 text-center font-mono font-bold text-gray-800">
-                        {unitsSold}
-                      </td>
-                      <td className="py-2 px-3 text-right font-mono font-bold text-emerald-700">
-                        +{formatCurrency(profit, business.currencySymbol)}
-                      </td>
-                    </tr>
-                  ))}
+                  {productPerformance.map(({ product: p, unitsSold, profit }) => {
+                    const metrics = CostCalculator.calculateProductMetrics(p);
+                    return (
+                      <tr key={p.id} className="hover:bg-gray-50/50">
+                        <td className="py-2 px-3 font-semibold text-gray-900">{p.name}</td>
+                        <td className="py-2 px-3 text-gray-600">{p.category}</td>
+                        <td className="py-2 px-3 text-center text-gray-600 font-mono">
+                          {p.batchYieldUnits} {p.yieldUnitName}
+                        </td>
+                        <td className="py-2 px-3 text-right font-mono text-gray-600">
+                          {formatCurrency(metrics.costPerUnit, business.currencySymbol)}
+                        </td>
+                        <td className="py-2 px-3 text-right font-mono font-bold text-gray-900">
+                          {formatCurrency(p.sellingPrice, business.currencySymbol)}
+                        </td>
+                        <td className="py-2 px-3 text-right font-mono font-bold text-emerald-700">
+                          +{formatCurrency(metrics.profitPerUnit, business.currencySymbol)}
+                        </td>
+                        <td className="py-2 px-3 text-right font-bold text-amber-900">
+                          {formatPercent(metrics.profitMarginPercent)}
+                        </td>
+                        <td className="py-2 px-3 text-center font-mono font-bold text-gray-800">
+                          {unitsSold}
+                        </td>
+                        <td className="py-2 px-3 text-right font-mono font-bold text-emerald-700">
+                          +{formatCurrency(profit, business.currencySymbol)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
