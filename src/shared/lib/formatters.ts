@@ -1,14 +1,13 @@
 import { UnitOfMeasure } from '../../entities/ingredient/model/types';
 
 /**
- * Currency formatter with symbol
+ * Currency formatter with symbol (Colombia - COP default)
+ * Formato estándar: $ 14.772 o $ 1.250.000 (sin decimales para COP habituales, con separador de miles con punto)
  */
 export function formatCurrency(amount: number, symbol: string = '$'): string {
   const safeAmount = isNaN(amount) ? 0 : amount;
-  return `${symbol}${safeAmount.toLocaleString('es-MX', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+  const formattedNumber = Math.round(safeAmount).toLocaleString('es-CO');
+  return `${symbol} ${formattedNumber}`;
 }
 
 /**

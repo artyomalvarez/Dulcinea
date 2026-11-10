@@ -75,7 +75,37 @@ export class LocalStorageAdapter {
 
   getBusinessProfile(): BusinessProfile {
     const data = localStorage.getItem(KEYS.BUSINESS);
-    return data ? JSON.parse(data) : INITIAL_BUSINESS_PROFILE;
+    if (!data) return INITIAL_BUSINESS_PROFILE;
+    const parsed: BusinessProfile = JSON.parse(data);
+    if (
+      parsed.businessName &&
+      (parsed.businessName.includes('Dulce Canela') || parsed.businessName.includes('DulceCosto'))
+    ) {
+      parsed.businessName = parsed.businessName
+        .replace(/Dulce Canela/g, 'Dulcinea')
+        .replace(/DulceCosto/g, 'Dulcinea');
+      if (parsed.email === 'contacto@dulcecanela.com') {
+        parsed.email = 'contacto@dulcinea.com';
+      }
+      this.saveBusinessProfile(parsed);
+    }
+
+    // Auto-migración a Colombia si aún tiene datos de México / MXN
+    if (parsed.currencyCode === 'MXN' || parsed.taxName?.includes('16%')) {
+      parsed.currencyCode = 'COP';
+      parsed.defaultTaxRate = 19;
+      parsed.taxName = 'IVA';
+      if (parsed.city?.includes('México')) {
+        parsed.city = 'Bogotá D.C., Colombia';
+        parsed.address = 'Calle 85 #14-26, Chicó Norte';
+        parsed.taxId = 'NIT 901.452.389-1';
+        parsed.phone = '+57 300 412 8900';
+        parsed.whatsapp = '+57 300 412 8900';
+      }
+      this.saveBusinessProfile(parsed);
+    }
+
+    return parsed;
   }
 
   saveBusinessProfile(profile: BusinessProfile): void {

@@ -163,13 +163,13 @@ export const MonthlyComparisonChart: React.FC<MonthlyComparisonChartProps> = ({
           </div>
 
           {/* Chart Type Toggle */}
-          <div className="flex items-center bg-amber-50 p-1 rounded-xl text-xs border border-amber-200/60">
+          <div className="flex items-center bg-stone-100 p-1 rounded-xl text-xs border border-stone-200/80">
             <button
               onClick={() => setChartType('barras')}
               className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                 chartType === 'barras'
-                  ? 'bg-amber-600 text-white shadow-2xs'
-                  : 'text-amber-900 hover:bg-amber-100'
+                  ? 'bg-rose-700 text-white shadow-2xs'
+                  : 'text-stone-700 hover:bg-stone-200/70'
               }`}
             >
               Barras
@@ -178,8 +178,8 @@ export const MonthlyComparisonChart: React.FC<MonthlyComparisonChartProps> = ({
               onClick={() => setChartType('area')}
               className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                 chartType === 'area'
-                  ? 'bg-amber-600 text-white shadow-2xs'
-                  : 'text-amber-900 hover:bg-amber-100'
+                  ? 'bg-rose-700 text-white shadow-2xs'
+                  : 'text-stone-700 hover:bg-stone-200/70'
               }`}
             >
               Área
@@ -190,7 +190,7 @@ export const MonthlyComparisonChart: React.FC<MonthlyComparisonChartProps> = ({
           {onOpenReport && (
             <button
               onClick={onOpenReport}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
               title="Descargar reporte resumen consolidado en PDF"
             >
               <FileText className="w-3.5 h-3.5" />

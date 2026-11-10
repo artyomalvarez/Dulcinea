@@ -233,48 +233,48 @@ export const IngredientManager: React.FC<IngredientManagerProps> = ({
       {/* Top Header & New Button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 font-serif flex items-center gap-2">
+          <h2 className="text-xl sm:text-2xl font-bold text-stone-800 font-serif flex items-center gap-2">
             <span>Catálogo de Insumos y Materias Primas</span>
           </h2>
-          <p className="text-xs sm:text-sm text-gray-500">
+          <p className="text-xs sm:text-sm text-stone-500">
             Organiza tus insumos agrupados por categorías (harinas, lácteos, decoraciones) y calcula automáticamente el costo unitario de compra.
           </p>
         </div>
 
         <button
           onClick={handleOpenAdd}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#1A2E40] hover:bg-[#142433] text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4 text-[#D4A373]" />
           <span>Nuevo Insumo</span>
         </button>
       </div>
 
       {/* Filter Bar: Category Pills with Count Badges */}
-      <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-xs space-y-3">
+      <div className="bg-white p-4 rounded-3xl border border-stone-200/80 shadow-xs space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* Search bar */}
           <div className="relative w-full sm:w-80">
-            <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
+            <Search className="w-4 h-4 absolute left-3 top-3 text-stone-400" />
             <input
               type="text"
               placeholder="Buscar insumo (ej: Harina, Mantequilla, Perlas)..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+              className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-600"
             />
           </div>
 
           {/* View mode toggle (Grouped vs Plain List) */}
           <div className="flex items-center gap-2 self-end sm:self-auto">
-            <span className="text-xs text-gray-400 font-medium">Modo de visualización:</span>
-            <div className="flex items-center bg-gray-100 p-1 rounded-xl text-xs">
+            <span className="text-xs text-stone-400 font-medium">Modo de visualización:</span>
+            <div className="flex items-center bg-stone-100 p-1 rounded-xl text-xs">
               <button
                 onClick={() => setViewMode('grouped')}
                 className={`px-3 py-1 rounded-lg font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                   viewMode === 'grouped'
-                    ? 'bg-white text-amber-900 shadow-2xs'
-                    : 'text-gray-500 hover:text-gray-900'
+                    ? 'bg-white text-rose-800 shadow-2xs'
+                    : 'text-stone-500 hover:text-stone-900'
                 }`}
                 title="Agrupar ingredientes por categoría en bloques visuales"
               >
@@ -285,8 +285,8 @@ export const IngredientManager: React.FC<IngredientManagerProps> = ({
                 onClick={() => setViewMode('list')}
                 className={`px-3 py-1 rounded-lg font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                   viewMode === 'list'
-                    ? 'bg-white text-amber-900 shadow-2xs'
-                    : 'text-gray-500 hover:text-gray-900'
+                    ? 'bg-white text-rose-800 shadow-2xs'
+                    : 'text-stone-500 hover:text-stone-900'
                 }`}
                 title="Lista corrida de ingredientes"
               >
@@ -298,14 +298,14 @@ export const IngredientManager: React.FC<IngredientManagerProps> = ({
         </div>
 
         {/* Category Pills Filter */}
-        <div className="pt-2 border-t border-gray-100">
+        <div className="pt-2 border-t border-stone-100">
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
             <button
               onClick={() => setSelectedCategoryFilter('todos')}
               className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
                 selectedCategoryFilter === 'todos'
-                  ? 'bg-amber-600 text-white shadow-xs'
-                  : 'bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200'
+                  ? 'bg-rose-700 text-white shadow-xs'
+                  : 'bg-stone-50 hover:bg-stone-100 text-stone-600 border border-stone-200'
               }`}
             >
               <span>Todos los Insumos</span>
@@ -313,7 +313,7 @@ export const IngredientManager: React.FC<IngredientManagerProps> = ({
                 className={`text-[10px] px-1.5 py-0.2 rounded-full ${
                   selectedCategoryFilter === 'todos'
                     ? 'bg-white/20 text-white'
-                    : 'bg-gray-200 text-gray-700'
+                    : 'bg-stone-200 text-stone-700'
                 }`}
               >
                 {categoryCounts['todos'] || 0}
@@ -330,8 +330,8 @@ export const IngredientManager: React.FC<IngredientManagerProps> = ({
                   onClick={() => setSelectedCategoryFilter(cat.id)}
                   className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
                     isSelected
-                      ? 'bg-amber-600 text-white shadow-xs'
-                      : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200'
+                      ? 'bg-rose-700 text-white shadow-xs'
+                      : 'bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200'
                   }`}
                 >
                   <span>{cat.icon}</span>
@@ -340,7 +340,7 @@ export const IngredientManager: React.FC<IngredientManagerProps> = ({
                     className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
                       isSelected
                         ? 'bg-white/20 text-white'
-                        : 'bg-gray-200/80 text-gray-600'
+                        : 'bg-stone-200/80 text-stone-600'
                     }`}
                   >
                     {count}
@@ -777,7 +777,7 @@ export const IngredientManager: React.FC<IngredientManagerProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-md cursor-pointer"
+                  className="px-5 py-2 rounded-xl bg-rose-700 hover:bg-rose-800 text-white font-bold shadow-md cursor-pointer"
                 >
                   Guardar Insumo
                 </button>

@@ -87,10 +87,12 @@ export const InvoiceViewer: React.FC<InvoiceViewerProps> = ({
                   <Cake className="w-6 h-6" />
                 </div>
                 <div>
-                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900 font-serif tracking-tight">
-                    {invoice.businessName || business.businessName}
+                  <h1 className="text-xl sm:text-2xl font-bold text-stone-900 font-serif tracking-tight">
+                    {(invoice.businessName || business.businessName || 'Dulcinea')
+                      .replace(/Dulce Canela/gi, 'Dulcinea')
+                      .replace(/DulceCosto/gi, 'Dulcinea')}
                   </h1>
-                  <p className="text-[11px] text-amber-900 font-medium">
+                  <p className="text-[11px] text-rose-800 font-medium">
                     {business.tagline || 'Taller de Repostería Artesanal'}
                   </p>
                 </div>
@@ -139,7 +141,7 @@ export const InvoiceViewer: React.FC<InvoiceViewerProps> = ({
               <div className="text-sm font-bold text-gray-900">{invoice.customerName}</div>
               {invoice.customerTaxId && (
                 <div className="text-[11px] text-gray-600 mt-0.5">
-                  <strong>RFC / ID Fiscal:</strong> {invoice.customerTaxId}
+                  <strong>NIT / ID Fiscal:</strong> {invoice.customerTaxId}
                 </div>
               )}
               {invoice.customerAddress && (
@@ -250,7 +252,7 @@ export const InvoiceViewer: React.FC<InvoiceViewerProps> = ({
               <div className="w-6 h-6 rounded-md bg-gray-100 border border-gray-300 flex items-center justify-center font-bold text-gray-500 font-mono">
                 ✓
               </div>
-              <span>Comprobante generado electrónicamente por DulceCosto Repostería</span>
+              <span>Comprobante generado electrónicamente por Dulcinea Repostería Artesanal</span>
             </div>
 
             <div className="text-center sm:text-right">

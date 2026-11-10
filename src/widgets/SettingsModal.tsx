@@ -100,7 +100,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `dulcecosto_backup_${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `dulcinea_backup_${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -154,13 +154,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         {/* Tab switch */}
-        <div className="flex space-x-2 border-b border-gray-100 pb-2">
+        <div className="flex space-x-2 border-b border-stone-100 pb-2">
           <button
             onClick={() => setActiveTab('settings')}
             className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
               activeTab === 'settings'
-                ? 'bg-amber-600 text-white shadow-xs'
-                : 'text-gray-600 hover:bg-gray-100'
+                ? 'bg-rose-700 text-white shadow-xs'
+                : 'text-stone-600 hover:bg-stone-100'
             }`}
           >
             Datos del Negocio y Moneda
@@ -169,8 +169,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             onClick={() => setActiveTab('backup')}
             className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'backup'
-                ? 'bg-amber-600 text-white shadow-xs'
-                : 'text-gray-600 hover:bg-gray-100'
+                ? 'bg-rose-700 text-white shadow-xs'
+                : 'text-stone-600 hover:bg-stone-100'
             }`}
           >
             <DatabaseBackup className="w-3.5 h-3.5" />
@@ -208,14 +208,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="block font-bold text-gray-700 mb-1">
-                  RFC / NIT / RUT / CUIT (Fiscal) *
+                  NIT / Identificación Fiscal *
                 </label>
                 <input
                   type="text"
                   required
                   value={taxId}
                   onChange={(e) => setTaxId(e.target.value)}
-                  placeholder="Ej: CAN-891023-R55"
+                  placeholder="Ej: 901.452.389-1"
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-amber-500 font-mono font-bold"
                 />
               </div>
@@ -227,7 +227,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   required
                   value={currencySymbol}
                   onChange={(e) => setCurrencySymbol(e.target.value)}
-                  placeholder="$, €, S/., Q, L"
+                  placeholder="$, €, COP"
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-amber-500 font-bold text-center"
                 />
               </div>
@@ -238,7 +238,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   type="text"
                   value={currencyCode}
                   onChange={(e) => setCurrencyCode(e.target.value)}
-                  placeholder="MXN, USD, EUR, COP"
+                  placeholder="COP, USD, EUR"
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-amber-500 font-mono text-center"
                 />
               </div>
@@ -285,6 +285,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <label className="block font-bold text-gray-700 mb-1">Teléfono / WhatsApp</label>
                 <input
                   type="tel"
+                  placeholder="+57 300 123 4567"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-amber-500"
@@ -345,7 +346,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-md cursor-pointer"
+                className="px-5 py-2 rounded-xl bg-rose-700 hover:bg-rose-800 text-white font-bold shadow-md cursor-pointer"
               >
                 Guardar Ajustes
               </button>

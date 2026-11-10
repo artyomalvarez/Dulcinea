@@ -43,42 +43,42 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 font-serif">
+          <h2 className="text-xl sm:text-2xl font-bold text-stone-800 font-serif">
             Facturas y Comprobantes Fiscales
           </h2>
-          <p className="text-xs sm:text-sm text-gray-500">
+          <p className="text-xs sm:text-sm text-stone-500">
             Genera comprobantes para tus clientes con desglose de productos, {business.taxName} y opción de imprimir o guardar en PDF.
           </p>
         </div>
 
         <button
           onClick={onOpenCreateModal}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#1A2E40] hover:bg-[#142433] text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4 text-[#D4A373]" />
           <span>Nueva Factura</span>
         </button>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-gray-100 shadow-xs">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-stone-200/80 shadow-xs">
         <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
+          <Search className="w-4 h-4 absolute left-3 top-3 text-stone-400" />
           <input
             type="text"
-            placeholder="Buscar por folio, cliente o RFC..."
+            placeholder="Buscar por folio, cliente o NIT..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+            className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-600"
           />
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <span className="text-xs text-gray-400 font-medium">Estado:</span>
+          <span className="text-xs text-stone-400 font-medium">Estado:</span>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="text-xs py-2 px-3 rounded-xl border border-gray-200 bg-white text-gray-700 focus:outline-none focus:border-amber-500"
+            className="text-xs py-2 px-3 rounded-xl border border-stone-200 bg-white text-stone-700 focus:outline-none focus:border-rose-600"
           >
             <option value="todos">Todos los estados</option>
             <option value="Emitida">Emitida</option>
@@ -89,13 +89,13 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
       </div>
 
       {/* Invoices Table */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
+      <div className="bg-white rounded-2xl border border-stone-200/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="bg-amber-50/50 border-b border-amber-100 text-gray-500 font-semibold uppercase text-[10px] tracking-wider">
+              <tr className="bg-stone-50 border-b border-stone-200/80 text-stone-500 font-semibold uppercase text-[10px] tracking-wider">
                 <th className="py-3 px-4">Folio / Fecha</th>
-                <th className="py-3 px-4">Cliente / Razón Social</th>
+                <th className="py-3 px-4">Cliente / Nombre del Negocio</th>
                 <th className="py-3 px-4">Conceptos</th>
                 <th className="py-3 px-4 text-right">Subtotal</th>
                 <th className="py-3 px-4 text-right">{business.taxName}</th>

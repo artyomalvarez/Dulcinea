@@ -146,11 +146,11 @@ export const RecipeBookPdfModal: React.FC<RecipeBookPdfModalProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-amber-800 text-white flex items-center justify-center font-serif text-base font-bold shadow-xs">
-                    {business.businessName.charAt(0)}
+                  <div className="w-8 h-8 rounded-lg bg-rose-700 text-white flex items-center justify-center font-serif text-base font-bold shadow-xs">
+                    {(business.businessName || 'Dulcinea').replace(/Dulce Canela/gi, 'Dulcinea').charAt(0)}
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-amber-800">
-                    {business.businessName}
+                  <span className="text-xs font-bold uppercase tracking-wider text-rose-800">
+                    {(business.businessName || 'Dulcinea').replace(/Dulce Canela/gi, 'Dulcinea').replace(/DulceCosto/gi, 'Dulcinea')}
                   </span>
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-stone-900 font-serif tracking-tight">
@@ -403,7 +403,7 @@ export const RecipeBookPdfModal: React.FC<RecipeBookPdfModalProps> = ({
             <div className="flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-stone-500">
               <div className="text-center sm:text-left space-y-1">
                 <p className="font-semibold text-stone-700">
-                  {business.businessName} &bull; Manual de Estandarización y Costos
+                  {(business.businessName || 'Dulcinea').replace(/Dulce Canela/gi, 'Dulcinea').replace(/DulceCosto/gi, 'Dulcinea')} &bull; Manual de Estandarización y Costos
                 </p>
                 <p className="text-[11px] text-stone-400">
                   Cálculo de costo unitario verificado: Gasto en insumos ÷ Unidades producidas.

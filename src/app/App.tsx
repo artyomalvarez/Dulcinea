@@ -10,26 +10,29 @@ import {
   Invoice,
   Product,
   ProductionBatch,
-  Sale
+  Sale,
 } from '../entities';
 import { storageAdapter } from '../shared/api/localStorage';
 import { applySaleToBatches, revertSaleFromBatches } from '../shared/lib';
 import { Header, ActiveTab } from '../widgets/Header';
 import { SettingsModal } from '../widgets/SettingsModal';
-import { Dashboard } from '../widgets/Dashboard/Dashboard';
-import { ProductList } from '../features/products/components/ProductList';
 import { ProductFormModal } from '../features/products/components/ProductFormModal';
-import { IngredientManager } from '../features/ingredients/components/IngredientManager';
-import { ProductionList } from '../features/production/components/ProductionList';
-import { SalesList } from '../features/sales/components/SalesList';
-import { InvoiceList } from '../features/invoices/components/InvoiceList';
+import { ProductionBatchModal } from '../features/production/components/ProductionList';
+import { SaleFormModal } from '../features/sales/components/SalesList';
 import { InvoiceModal } from '../features/invoices/components/InvoiceModal';
 import { InvoiceViewer } from '../features/invoices/components/InvoiceViewer';
 import { ProfitabilityCalculatorModal } from '../features/profitability/components/ProfitabilityCalculatorModal';
+import {
+  DashboardPage,
+  CatalogPage,
+  WorkshopPage,
+  AdminPage,
+} from '../pages';
 
 export default function App() {
   // Navigation
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
+  const [catalogSubTab, setCatalogSubTab] = useState<'recipes' | 'ingredients'>('recipes');
 
   // Application Data initialized via localStorage adapter
   const [business, setBusiness] = useState<BusinessProfile>(() => storageAdapter.getBusinessProfile());
@@ -106,7 +109,11 @@ export default function App() {
 
   // Batches CRUD
   const handleSaveBatch = (newBatch: ProductionBatch) => {
-    const updated = [newBatch, ...storageAdapter.getBatches()];
+    const current = storageAdapter.getBatches();
+    const exists = current.some((b) => b.id === newBatch.id);
+    const updated = exists
+      ? current.map((b) => (b.id === newBatch.id ? newBatch : b))
+      : [newBatch, ...current];
     storageAdapter.saveBatches(updated);
     setBatches(updated);
   };
@@ -117,60 +124,56 @@ export default function App() {
     setBatches(updated);
   };
 
-  // Sales CRUD (Immutable multi-batch stock deduction & restoration via SalesService)
+  // Sales CRUD & Stock reconciliation
   const handleSaveSale = (newSale: Sale) => {
-    const updatedSales = [newSale, ...storageAdapter.getSales()];
-    storageAdapter.saveSales(updatedSales);
+    const currentSales = storageAdapter.getSales();
+    const currentBatches = storageAdapter.getBatches();
 
-    const updatedBatches = applySaleToBatches(newSale, storageAdapter.getBatches());
+    const existingSale = currentSales.find((s) => s.id === newSale.id);
+
+    let workingBatches = currentBatches;
+    if (existingSale) {
+      workingBatches = revertSaleFromBatches(existingSale, workingBatches);
+    }
+
+    const updatedBatches = applySaleToBatches(newSale, workingBatches);
+
     storageAdapter.saveBatches(updatedBatches);
-
-    setSales(updatedSales);
     setBatches(updatedBatches);
+
+    const updatedSales = existingSale
+      ? currentSales.map((s) => (s.id === newSale.id ? newSale : s))
+      : [newSale, ...currentSales];
+
+    storageAdapter.saveSales(updatedSales);
+    setSales(updatedSales);
   };
 
-  const handleDeleteSale = (id: string) => {
+  const handleDeleteSale = (saleId: string) => {
     const currentSales = storageAdapter.getSales();
-    const saleToDelete = currentSales.find((s) => s.id === id);
+    const saleToDelete = currentSales.find((s) => s.id === saleId);
     if (!saleToDelete) return;
 
-    const updatedSales = currentSales.filter((s) => s.id !== id);
+    const currentBatches = storageAdapter.getBatches();
+    const restoredBatches = revertSaleFromBatches(saleToDelete, currentBatches);
+
+    storageAdapter.saveBatches(restoredBatches);
+    setBatches(restoredBatches);
+
+    const updatedSales = currentSales.filter((s) => s.id !== saleId);
     storageAdapter.saveSales(updatedSales);
-
-    const updatedBatches = revertSaleFromBatches(saleToDelete, storageAdapter.getBatches());
-    storageAdapter.saveBatches(updatedBatches);
-
     setSales(updatedSales);
-    setBatches(updatedBatches);
   };
 
   // Invoices CRUD
   const handleSaveInvoice = (newInv: Invoice) => {
-    const updatedInvoices = [newInv, ...storageAdapter.getInvoices()];
-    storageAdapter.saveInvoices(updatedInvoices);
-
-    const currentBusiness = storageAdapter.getBusinessProfile();
-    const updatedBusiness: BusinessProfile = {
-      ...currentBusiness,
-      nextInvoiceNumber: (currentBusiness.nextInvoiceNumber || 100) + 1,
-    };
-    storageAdapter.saveBusinessProfile(updatedBusiness);
-
-    let updatedSales = storageAdapter.getSales();
-    if (newInv.saleId) {
-      updatedSales = updatedSales.map((s) =>
-        s.id === newInv.saleId ? { ...s, invoiceId: newInv.id } : s
-      );
-      storageAdapter.saveSales(updatedSales);
-    }
-
-    setInvoices(updatedInvoices);
-    setBusiness(updatedBusiness);
-    setSales(updatedSales);
-
-    // Immediately open viewer for print / PDF
-    setViewingInvoice(newInv);
-    setIsViewerOpen(true);
+    const current = storageAdapter.getInvoices();
+    const exists = current.some((i) => i.id === newInv.id);
+    const updated = exists
+      ? current.map((i) => (i.id === newInv.id ? newInv : i))
+      : [newInv, ...current];
+    storageAdapter.saveInvoices(updated);
+    setInvoices(updated);
   };
 
   const handleDeleteInvoice = (id: string) => {
@@ -190,31 +193,26 @@ export default function App() {
     }
   };
 
-  // Business profile save
-  const handleSaveBusiness = (newBiz: BusinessProfile) => {
-    storageAdapter.saveBusinessProfile(newBiz);
-    setBusiness(newBiz);
-  };
-
-  // Actions from various components
-  const handleMakeBatchFromProduct = (product: Product) => {
-    setPreselectedProductForBatch(product);
-    setIsBatchModalOpen(true);
-  };
-
-  const handleSaleFromProduct = (product: Product) => {
-    setPreselectedProductForSale(product);
-    setIsSaleModalOpen(true);
-  };
-
   const handleGenerateInvoiceFromSale = (sale: Sale) => {
     setSaleForInvoice(sale);
     setIsInvoiceModalOpen(true);
   };
 
+  // Business settings
+  const handleSaveBusiness = (updated: BusinessProfile) => {
+    storageAdapter.saveBusinessProfile(updated);
+    setBusiness(updated);
+  };
+
+  // Handlers for fast production from catalog
+  const handleMakeBatchFromProduct = (product: Product) => {
+    setPreselectedProductForBatch(product);
+    setIsBatchModalOpen(true);
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#fbf9f6] text-gray-800 antialiased selection:bg-amber-200 selection:text-amber-900">
-      {/* Top Header */}
+    <div className="min-h-screen bg-[#FAF8F5] text-[#2C3E50] flex flex-col font-sans selection:bg-[#D4A373]/30 selection:text-[#1A2E40]">
+      {/* Rebranded Header (Dulcinea - 4 tabs) */}
       <Header
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -230,101 +228,101 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 no-print">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12">
         {activeTab === 'dashboard' && (
-          <Dashboard
+          <DashboardPage
             products={products}
             batches={batches}
             sales={sales}
             ingredients={ingredients}
             business={business}
-            onNavigateTab={setActiveTab}
-            onNewBatch={() => {
+            onOpenSaleModal={() => {
+              setPreselectedProductForSale(null);
+              setIsSaleModalOpen(true);
+            }}
+            onOpenBatchModal={() => {
               setPreselectedProductForBatch(null);
               setIsBatchModalOpen(true);
             }}
-            onNewSale={() => {
-              setPreselectedProductForSale(null);
-              setIsSaleModalOpen(true);
+            onNavigateToIngredients={() => {
+              setCatalogSubTab('ingredients');
+              setActiveTab('catalog');
+            }}
+            onNavigateToCatalog={() => {
+              setCatalogSubTab('recipes');
+              setActiveTab('catalog');
+            }}
+            onNavigateToWorkshop={() => {
+              setActiveTab('workshop');
             }}
             onOpenCalculator={() => setIsCalculatorModalOpen(true)}
           />
         )}
 
-        {activeTab === 'products' && (
-          <ProductList
+        {activeTab === 'catalog' && (
+          <CatalogPage
             products={products}
-            onOpenCreateModal={() => {
+            ingredients={ingredients}
+            business={business}
+            initialSubTab={catalogSubTab}
+            onOpenCreateProduct={() => {
               setEditingProduct(null);
               setIsProductModalOpen(true);
             }}
-            onEditProduct={(p) => {
-              setEditingProduct(p);
+            onEditProduct={(product) => {
+              setEditingProduct(product);
               setIsProductModalOpen(true);
             }}
             onDeleteProduct={handleDeleteProduct}
             onMakeBatch={handleMakeBatchFromProduct}
-            business={business}
-          />
-        )}
-
-        {activeTab === 'ingredients' && (
-          <IngredientManager
-            ingredients={ingredients}
             onSaveIngredient={handleSaveIngredient}
             onDeleteIngredient={handleDeleteIngredient}
-            business={business}
+            onOpenCalculator={() => setIsCalculatorModalOpen(true)}
           />
         )}
 
-        {activeTab === 'production' && (
-          <ProductionList
-            batches={batches}
+        {activeTab === 'workshop' && (
+          <WorkshopPage
             products={products}
+            batches={batches}
+            sales={sales}
             business={business}
             onSaveBatch={handleSaveBatch}
             onDeleteBatch={handleDeleteBatch}
-            onOpenSaleModalForProduct={handleSaleFromProduct}
-            preselectedProduct={preselectedProductForBatch}
-            isOpenModal={isBatchModalOpen}
-            onCloseModal={() => {
+            isOpenBatchModal={isBatchModalOpen}
+            onCloseBatchModal={() => {
               setIsBatchModalOpen(false);
               setPreselectedProductForBatch(null);
             }}
-            onOpenNewModal={() => {
+            onOpenNewBatchModal={() => {
               setPreselectedProductForBatch(null);
               setIsBatchModalOpen(true);
             }}
-          />
-        )}
-
-        {activeTab === 'sales' && (
-          <SalesList
-            sales={sales}
-            products={products}
-            batches={batches}
-            business={business}
+            preselectedProductForBatch={preselectedProductForBatch}
             onSaveSale={handleSaveSale}
             onDeleteSale={handleDeleteSale}
             onGenerateInvoiceFromSale={handleGenerateInvoiceFromSale}
-            isOpenModal={isSaleModalOpen}
-            onCloseModal={() => {
+            isOpenSaleModal={isSaleModalOpen}
+            onCloseSaleModal={() => {
               setIsSaleModalOpen(false);
               setPreselectedProductForSale(null);
             }}
-            onOpenNewModal={() => {
+            onOpenNewSaleModal={() => {
               setPreselectedProductForSale(null);
               setIsSaleModalOpen(true);
             }}
-            preselectedProduct={preselectedProductForSale}
+            preselectedProductForSale={preselectedProductForSale}
           />
         )}
 
-        {activeTab === 'invoices' && (
-          <InvoiceList
+        {activeTab === 'admin' && (
+          <AdminPage
             invoices={invoices}
+            products={products}
+            batches={batches}
+            sales={sales}
             business={business}
-            onOpenCreateModal={() => {
+            onOpenCreateInvoice={() => {
               setSaleForInvoice(null);
               setIsInvoiceModalOpen(true);
             }}
@@ -334,31 +332,27 @@ export default function App() {
             }}
             onDeleteInvoice={handleDeleteInvoice}
             onUpdateInvoiceStatus={handleUpdateInvoiceStatus}
-          />
-        )}
-
-        {activeTab === 'calculator' && (
-          <ProfitabilityCalculatorModal
-            business={business}
-            isOpen={true}
-            isStandaloneTab={true}
+            onOpenSettings={() => {
+              setSettingsInitialTab('settings');
+              setIsSettingsOpen(true);
+            }}
           />
         )}
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-100 py-4 text-center text-xs text-gray-400 no-print">
+      <footer className="bg-white border-t border-stone-200/80 py-4 text-center text-xs text-stone-400 no-print">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>
-            {business.businessName} &bull; Taller de Repostería y Control de Costos
+          <span className="font-medium text-stone-600">
+            {business.businessName || 'Dulcinea'} &bull; Taller de Repostería Artesanal
           </span>
-          <span className="font-mono text-[11px]">
-            Cálculo exacto: Costo Unitario = Insumos ÷ Rendimiento | Utilidad = Venta - Costo
+          <span className="font-mono text-[11px] text-stone-400">
+            Costo Unitario = Insumos ÷ Rendimiento | Utilidad = Venta - Costo
           </span>
         </div>
       </footer>
 
-      {/* Modals */}
+      {/* Global Modals */}
       <ProductFormModal
         isOpen={isProductModalOpen}
         onClose={() => {
@@ -369,6 +363,32 @@ export default function App() {
         ingredients={ingredients}
         business={business}
         onSave={handleSaveProduct}
+      />
+
+      <ProductionBatchModal
+        isOpen={isBatchModalOpen}
+        onClose={() => {
+          setIsBatchModalOpen(false);
+          setPreselectedProductForBatch(null);
+        }}
+        onSaveBatch={handleSaveBatch}
+        products={products}
+        batchesCount={batches.length}
+        business={business}
+        preselectedProduct={preselectedProductForBatch}
+      />
+
+      <SaleFormModal
+        isOpen={isSaleModalOpen}
+        onClose={() => {
+          setIsSaleModalOpen(false);
+          setPreselectedProductForSale(null);
+        }}
+        onSaveSale={handleSaveSale}
+        products={products}
+        salesCount={sales.length}
+        business={business}
+        preselectedProduct={preselectedProductForSale}
       />
 
       <InvoiceModal

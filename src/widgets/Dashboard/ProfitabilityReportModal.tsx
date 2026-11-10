@@ -124,14 +124,16 @@ export const ProfitabilityReportModal: React.FC<ProfitabilityReportModalProps> =
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 pb-6 border-b-2 border-amber-800/20">
             <div className="space-y-1.5">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-amber-700 text-white flex items-center justify-center font-bold shadow-xs">
+                <div className="w-12 h-12 rounded-2xl bg-rose-700 text-white flex items-center justify-center font-bold shadow-xs">
                   <Cake className="w-7 h-7" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900 font-serif tracking-tight">
-                    {business.businessName}
+                  <h1 className="text-2xl font-bold text-stone-900 font-serif tracking-tight">
+                    {(business.businessName || 'Dulcinea')
+                      .replace(/Dulce Canela/gi, 'Dulcinea')
+                      .replace(/DulceCosto/gi, 'Dulcinea')}
                   </h1>
-                  <p className="text-xs text-amber-900 font-medium">
+                  <p className="text-xs text-rose-900 font-medium">
                     {business.tagline || 'Taller de Repostería y Pastelería Artesanal'}
                   </p>
                 </div>
@@ -139,7 +141,7 @@ export const ProfitabilityReportModal: React.FC<ProfitabilityReportModalProps> =
 
               <div className="pt-2 text-[11px] text-gray-500 space-y-0.5">
                 <div>
-                  <strong>RFC / ID Fiscal:</strong> {business.taxId} | <strong>Titular:</strong> {business.ownerName}
+                  <strong>NIT / ID Fiscal:</strong> {business.taxId} | <strong>Titular:</strong> {business.ownerName}
                 </div>
                 <div>
                   <strong>Ubicación:</strong> {business.address}, {business.city}
@@ -366,8 +368,12 @@ export const ProfitabilityReportModal: React.FC<ProfitabilityReportModalProps> =
 
             <div className="text-center sm:text-right space-y-1">
               <div className="border-b border-gray-300 w-52 mb-1"></div>
-              <span className="font-bold text-gray-800">Administración y Finanzas</span>
-              <p className="text-[10px] text-gray-400">{business.businessName}</p>
+              <span className="font-bold text-stone-800">Administración y Finanzas</span>
+              <p className="text-[10px] text-stone-400">
+                {(business.businessName || 'Dulcinea')
+                  .replace(/Dulce Canela/gi, 'Dulcinea')
+                  .replace(/DulceCosto/gi, 'Dulcinea')}
+              </p>
             </div>
           </div>
 

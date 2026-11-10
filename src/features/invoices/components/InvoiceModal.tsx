@@ -219,11 +219,11 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block font-bold text-gray-700 mb-1">Nombre o Razón Social *</label>
+                <label className="block font-bold text-gray-700 mb-1">Cliente / Nombre del Negocio *</label>
                 <input
                   type="text"
                   required
-                  placeholder="Ej: Carolina Méndez, Restaurante Bistro"
+                  placeholder="Ej: Carolina Méndez, Café Dulce Bistro"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-amber-500"
@@ -231,10 +231,10 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
               </div>
 
               <div>
-                <label className="block font-bold text-gray-700 mb-1">RFC / NIT / Identificación Fiscal</label>
+                <label className="block font-bold text-gray-700 mb-1">NIT / Identificación Fiscal</label>
                 <input
                   type="text"
-                  placeholder="Ej: MEN-920415-X11"
+                  placeholder="Ej: 901.452.389-1"
                   value={customerTaxId}
                   onChange={(e) => setCustomerTaxId(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-amber-500 font-mono"
@@ -247,7 +247,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                 <label className="block font-bold text-gray-700 mb-1">Dirección Fiscal / Entrega</label>
                 <input
                   type="text"
-                  placeholder="Calle, Número, Colonia, Ciudad"
+                  placeholder="Calle, Número, Barrio, Ciudad"
                   value={customerAddress}
                   onChange={(e) => setCustomerAddress(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-amber-500"
@@ -258,7 +258,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                 <label className="block font-bold text-gray-700 mb-1">Teléfono</label>
                 <input
                   type="tel"
-                  placeholder="55 1234 5678"
+                  placeholder="+57 300 123 4567"
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-amber-500"

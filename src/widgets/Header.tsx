@@ -1,18 +1,16 @@
 import React from 'react';
 import {
   Cake,
-  Receipt,
   TrendingUp,
-  Boxes,
-  ShoppingBag,
+  BookOpen,
   ChefHat,
+  Briefcase,
   Settings,
-  HelpCircle,
   DatabaseBackup
 } from 'lucide-react';
 import { BusinessProfile } from '../entities';
 
-export type ActiveTab = 'dashboard' | 'products' | 'ingredients' | 'production' | 'sales' | 'invoices' | 'calculator';
+export type ActiveTab = 'dashboard' | 'catalog' | 'workshop' | 'admin';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -29,79 +27,115 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSettings,
   onOpenBackup,
 }) => {
-  const navItems: { id: ActiveTab; label: string; icon: React.ReactNode; badge?: string }[] = [
-    { id: 'dashboard', label: 'Panel Principal', icon: <TrendingUp className="w-4 h-4" /> },
-    { id: 'products', label: 'Productos y Recetas', icon: <Cake className="w-4 h-4" /> },
-    { id: 'production', label: 'Producción (Lotes)', icon: <ChefHat className="w-4 h-4" /> },
-    { id: 'sales', label: 'Ventas y Clientes', icon: <ShoppingBag className="w-4 h-4" /> },
-    { id: 'invoices', label: 'Facturación', icon: <Receipt className="w-4 h-4" /> },
-    { id: 'ingredients', label: 'Insumos', icon: <Boxes className="w-4 h-4" /> },
-    { id: 'calculator', label: 'Simulador de Costeo', icon: <HelpCircle className="w-4 h-4" /> },
+  const navItems: { id: ActiveTab; label: string; subtitle: string; icon: React.ReactNode }[] = [
+    {
+      id: 'dashboard',
+      label: 'Inicio',
+      subtitle: 'Resumen y métricas',
+      icon: <TrendingUp className="w-4 h-4" />,
+    },
+    {
+      id: 'catalog',
+      label: 'Mi Catálogo',
+      subtitle: 'Recetas e Insumos',
+      icon: <BookOpen className="w-4 h-4" />,
+    },
+    {
+      id: 'workshop',
+      label: 'Mi Taller',
+      subtitle: 'Producción y Ventas',
+      icon: <ChefHat className="w-4 h-4" />,
+    },
+    {
+      id: 'admin',
+      label: 'Administración',
+      subtitle: 'Facturación y Reportes',
+      icon: <Briefcase className="w-4 h-4" />,
+    },
   ];
 
+  const displayName = (business.businessName || 'Dulcinea')
+    .replace(/Dulce Canela/gi, 'Dulcinea')
+    .replace(/DulceCosto/gi, 'Dulcinea');
+
   return (
-    <header className="bg-white border-b border-amber-100 shadow-xs sticky top-0 z-30 no-print">
-      {/* Top Banner */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+    <header className="bg-[#1A2E40] text-white border-b border-[#142433] shadow-md sticky top-0 z-30 no-print">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          
-          {/* Logo & Business Name */}
-          <div className="flex items-center space-x-3">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-amber-600 via-rose-500 to-amber-500 flex items-center justify-center text-white shadow-md shadow-amber-200">
-              <Cake className="w-6 h-6" />
+          {/* Logo & Brand Name */}
+          <div className="flex items-center space-x-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-[#142433] border border-[#D4A373]/40 flex items-center justify-center text-[#FAF8F5] shadow-md">
+              <ChefHat className="w-6 h-6 text-[#FAF8F5]" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold text-gray-900 tracking-tight flex items-center gap-1.5 font-serif">
-                  {business.businessName || 'DulceCosto Repostería'}
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-xl sm:text-2xl font-bold text-[#FAF8F5] tracking-tight flex items-center gap-1.5 font-serif">
+                  {displayName}
                 </h1>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#142433] text-[#D4A373] border border-[#D4A373]/30">
                   {business.currencySymbol} {business.currencyCode}
                 </span>
               </div>
-              <p className="text-xs text-gray-500 line-clamp-1">
-                {business.tagline || 'Control de costos, rentabilidad y facturación artesanal'}
+              <p className="text-xs text-slate-300 line-clamp-1">
+                {business.tagline || 'Repostería artesanal, costeo de recetas y gestión de taller'}
               </p>
             </div>
           </div>
 
-          {/* Business Info & Quick Actions */}
+          {/* Quick Actions */}
           <div className="flex items-center gap-2 self-end md:self-auto">
             <button
               onClick={onOpenBackup}
               title="Respaldar o Restaurar Datos"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 transition-colors cursor-pointer shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-white/10 text-xs font-semibold text-slate-200 bg-white/5 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer"
             >
-              <DatabaseBackup className="w-3.5 h-3.5 text-gray-500" />
+              <DatabaseBackup className="w-3.5 h-3.5 text-[#D4A373]" />
               <span>Respaldo</span>
             </button>
 
             <button
               onClick={onOpenSettings}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-amber-200 bg-amber-50 text-amber-900 text-xs font-semibold hover:bg-amber-100 transition-colors cursor-pointer shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#D4A373] hover:bg-[#c88a58] text-[#1A2E40] text-xs font-bold transition-all cursor-pointer shadow-xs"
             >
-              <Settings className="w-3.5 h-3.5 text-amber-700" />
-              <span>Ajustes del Negocio</span>
+              <Settings className="w-3.5 h-3.5 text-[#1A2E40]" />
+              <span>Ajustes</span>
             </button>
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <nav className="flex space-x-1 sm:space-x-2 overflow-x-auto mt-3 pt-1 border-t border-gray-100 no-scrollbar">
+        {/* 4-Section Navigation Bar */}
+        <nav className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3.5 pt-2.5 border-t border-white/10">
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             return (
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-medium rounded-lg whitespace-nowrap transition-all cursor-pointer ${
+                className={`flex items-center gap-2.5 px-4 py-2.5 rounded-2xl text-left transition-all cursor-pointer border ${
                   isActive
-                    ? 'bg-amber-600 text-white shadow-xs font-semibold'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-amber-50/70'
+                    ? 'bg-white/15 text-white border-[#D4A373] shadow-xs'
+                    : 'bg-white/5 text-slate-300 border-transparent hover:bg-white/10 hover:text-white'
                 }`}
               >
-                {item.icon}
-                <span>{item.label}</span>
+                <div
+                  className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                    isActive ? 'bg-[#D4A373] text-[#1A2E40]' : 'bg-white/10 text-[#D4A373]'
+                  }`}
+                >
+                  {item.icon}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs sm:text-sm font-bold leading-tight truncate">
+                    {item.label}
+                  </div>
+                  <div
+                    className={`text-[10px] truncate hidden sm:block ${
+                      isActive ? 'text-[#D4A373]' : 'text-slate-400'
+                    }`}
+                  >
+                    {item.subtitle}
+                  </div>
+                </div>
               </button>
             );
           })}
