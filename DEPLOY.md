@@ -5,7 +5,6 @@ Estructura de despliegue basada en el flujo de [nuz777/NuzNotes](https://github.
 | Destino | Tipo de Entorno | Workflow |
 |---|---|---|
 | **Azure App Service** (Linux, Node 20/22/24) | Producción Principal | `.github/workflows/main_dulcinea-app.yml` |
-| **GitHub Pages** | Vista Previa / Staging estático | `.github/workflows/deploy-pages.yml` |
 
 ---
 
