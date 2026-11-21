@@ -32,13 +32,22 @@ import {
 import { MonthlyComparisonChart } from './MonthlyComparisonChart';
 import { ProfitabilityReportModal } from './ProfitabilityReportModal';
 
+type DashboardLegacyTab =
+  | 'dashboard'
+  | 'ingredients'
+  | 'products'
+  | 'production'
+  | 'sales'
+  | 'invoices'
+  | 'calculator';
+
 interface DashboardProps {
   products: Product[];
   batches: ProductionBatch[];
   sales: Sale[];
   ingredients?: Ingredient[];
   business: BusinessProfile;
-  onNavigateTab: (tab: any) => void;
+  onNavigateTab: (tab: DashboardLegacyTab) => void;
   onNewBatch: () => void;
   onNewSale: () => void;
   onOpenCalculator: () => void;

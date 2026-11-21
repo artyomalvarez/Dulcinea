@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import {
   Ingredient,
   Product,
@@ -5,6 +6,13 @@ import {
   Sale,
   Invoice,
   BusinessProfile,
+  IngredientSchema,
+  ProductSchema,
+  ProductionBatchSchema,
+  SaleSchema,
+  InvoiceSchema,
+  BusinessProfileSchema,
+  BackupPayloadSchema,
 } from '../../entities';
 import {
   INITIAL_INGREDIENTS,
@@ -27,10 +35,26 @@ export const KEYS = {
 
 export const STORAGE_KEYS = KEYS;
 
+function parseStoredWithSchema<T>(key: string, schema: z.ZodType<T>, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    const parsedJson: unknown = JSON.parse(raw);
+    const result = schema.safeParse(parsedJson);
+    if (!result.success) {
+      console.warn(`Invalid data in localStorage key "${key}", falling back to defaults.`);
+      return fallback;
+    }
+    return result.data;
+  } catch (err) {
+    console.warn(`Failed to parse localStorage key "${key}":`, err);
+    return fallback;
+  }
+}
+
 export class LocalStorageAdapter {
   getIngredients(): Ingredient[] {
-    const data = localStorage.getItem(KEYS.INGREDIENTS);
-    return data ? JSON.parse(data) : INITIAL_INGREDIENTS;
+    return parseStoredWithSchema(KEYS.INGREDIENTS, z.array(IngredientSchema), INITIAL_INGREDIENTS);
   }
 
   saveIngredients(ingredients: Ingredient[]): void {
@@ -38,8 +62,7 @@ export class LocalStorageAdapter {
   }
 
   getProducts(): Product[] {
-    const data = localStorage.getItem(KEYS.PRODUCTS);
-    return data ? JSON.parse(data) : INITIAL_PRODUCTS;
+    return parseStoredWithSchema(KEYS.PRODUCTS, z.array(ProductSchema), INITIAL_PRODUCTS);
   }
 
   saveProducts(products: Product[]): void {
@@ -47,8 +70,7 @@ export class LocalStorageAdapter {
   }
 
   getBatches(): ProductionBatch[] {
-    const data = localStorage.getItem(KEYS.BATCHES);
-    return data ? JSON.parse(data) : INITIAL_BATCHES;
+    return parseStoredWithSchema(KEYS.BATCHES, z.array(ProductionBatchSchema), INITIAL_BATCHES);
   }
 
   saveBatches(batches: ProductionBatch[]): void {
@@ -56,8 +78,7 @@ export class LocalStorageAdapter {
   }
 
   getSales(): Sale[] {
-    const data = localStorage.getItem(KEYS.SALES);
-    return data ? JSON.parse(data) : INITIAL_SALES;
+    return parseStoredWithSchema(KEYS.SALES, z.array(SaleSchema), INITIAL_SALES);
   }
 
   saveSales(sales: Sale[]): void {
@@ -65,8 +86,7 @@ export class LocalStorageAdapter {
   }
 
   getInvoices(): Invoice[] {
-    const data = localStorage.getItem(KEYS.INVOICES);
-    return data ? JSON.parse(data) : INITIAL_INVOICES;
+    return parseStoredWithSchema(KEYS.INVOICES, z.array(InvoiceSchema), INITIAL_INVOICES);
   }
 
   saveInvoices(invoices: Invoice[]): void {
@@ -74,38 +94,32 @@ export class LocalStorageAdapter {
   }
 
   getBusinessProfile(): BusinessProfile {
-    const data = localStorage.getItem(KEYS.BUSINESS);
-    if (!data) return INITIAL_BUSINESS_PROFILE;
-    const parsed: BusinessProfile = JSON.parse(data);
+    const parsed = parseStoredWithSchema(
+      KEYS.BUSINESS,
+      BusinessProfileSchema,
+      INITIAL_BUSINESS_PROFILE
+    );
+    const updated: BusinessProfile = { ...parsed };
+    let changed = false;
+
     if (
-      parsed.businessName &&
-      (parsed.businessName.includes('Dulce Canela') || parsed.businessName.includes('DulceCosto'))
+      updated.businessName &&
+      (updated.businessName.includes('Dulce Canela') || updated.businessName.includes('DulceCosto'))
     ) {
-      parsed.businessName = parsed.businessName
+      updated.businessName = updated.businessName
         .replace(/Dulce Canela/g, 'Dulcinea')
         .replace(/DulceCosto/g, 'Dulcinea');
-      if (parsed.email === 'contacto@dulcecanela.com') {
-        parsed.email = 'contacto@dulcinea.com';
+      if (updated.email === 'contacto@dulcecanela.com') {
+        updated.email = 'contacto@dulcinea.com';
       }
-      this.saveBusinessProfile(parsed);
+      changed = true;
     }
 
-    // Auto-migración a Colombia si aún tiene datos de México / MXN
-    if (parsed.currencyCode === 'MXN' || parsed.taxName?.includes('16%')) {
-      parsed.currencyCode = 'COP';
-      parsed.defaultTaxRate = 19;
-      parsed.taxName = 'IVA';
-      if (parsed.city?.includes('México')) {
-        parsed.city = 'Bogotá D.C., Colombia';
-        parsed.address = 'Calle 85 #14-26, Chicó Norte';
-        parsed.taxId = 'NIT 901.452.389-1';
-        parsed.phone = '+57 300 412 8900';
-        parsed.whatsapp = '+57 300 412 8900';
-      }
-      this.saveBusinessProfile(parsed);
+    if (changed) {
+      this.saveBusinessProfile(updated);
     }
 
-    return parsed;
+    return updated;
   }
 
   saveBusinessProfile(profile: BusinessProfile): void {
@@ -128,7 +142,14 @@ export class LocalStorageAdapter {
 
   importBackup(json: string): boolean {
     try {
-      const data = JSON.parse(json);
+      const raw: unknown = JSON.parse(json);
+      const parsed = BackupPayloadSchema.safeParse(raw);
+      if (!parsed.success) {
+        console.error('Backup validation failed:', parsed.error.flatten());
+        return false;
+      }
+
+      const data = parsed.data;
       if (data.business) this.saveBusinessProfile(data.business);
       if (data.ingredients) this.saveIngredients(data.ingredients);
       if (data.products) this.saveProducts(data.products);
@@ -153,6 +174,3 @@ export class LocalStorageAdapter {
 }
 
 export const storageAdapter = new LocalStorageAdapter();
-export const localStorageAdapter = storageAdapter;
-export const storage = storageAdapter;
-export * from './initialData';

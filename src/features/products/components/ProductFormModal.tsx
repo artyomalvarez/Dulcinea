@@ -9,6 +9,7 @@ import {
   BusinessProfile,
   Ingredient,
   Product,
+  ProductCategory,
   RecipeIngredient,
   UnitOfMeasure
 } from '../../../entities';
@@ -76,8 +77,9 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       setTargetMarginPercent(55);
       setNotes('');
       // If we have default ingredients, pick first as preset
-      if (ingredients.length > 0) {
-        setSelectedIngId(ingredients[0].id);
+      const firstIngredient = ingredients[0];
+      if (firstIngredient) {
+        setSelectedIngId(firstIngredient.id);
       }
       setRecipeItems([]);
     }
@@ -209,7 +211,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
               <label className="block font-bold text-gray-700 mb-1">Categoría</label>
               <select
                 value={category}
-                onChange={(e) => setCategory(e.target.value as any)}
+                onChange={(e) => setCategory(e.target.value as ProductCategory)}
                 className="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
               >
                 <option value="Pasteles">Pasteles</option>
@@ -334,7 +336,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
 
                 <select
                   value={inputUnit}
-                  onChange={(e) => setInputUnit(e.target.value as any)}
+                  onChange={(e) => setInputUnit(e.target.value as UnitOfMeasure)}
                   className="w-24 px-2 py-2 rounded-xl border border-gray-200 bg-white text-xs focus:outline-none focus:border-amber-500"
                 >
                   <option value="g">g (gramos)</option>

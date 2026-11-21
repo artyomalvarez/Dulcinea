@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { addDays, format } from 'date-fns';
 import {
   X,
   Plus,
   Trash2,
   Receipt
 } from 'lucide-react';
-import { BusinessProfile, Invoice, InvoiceItem, Product, Sale } from '../../../entities';
+import { BusinessProfile, Invoice, InvoiceItem, InvoiceStatus, Product, Sale } from '../../../entities';
 import { formatCurrency } from '../../../shared/lib';
 
 interface InvoiceModalProps {
@@ -26,7 +27,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
   initialSale,
 }) => {
   const [invoiceNumber, setInvoiceNumber] = useState('');
-  const [issueDate, setIssueDate] = useState(new Date().toISOString().split('T')[0]);
+  const [issueDate, setIssueDate] = useState(() => format(new Date(), 'yyyy-MM-dd'));
   const [dueDate, setDueDate] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [customerTaxId, setCustomerTaxId] = useState('');
@@ -47,9 +48,9 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       const today = new Date();
-      const inSevenDays = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-      setIssueDate(today.toISOString().split('T')[0]);
-      setDueDate(inSevenDays.toISOString().split('T')[0]);
+      const inSevenDays = addDays(today, 7);
+      setIssueDate(format(today, 'yyyy-MM-dd'));
+      setDueDate(format(inSevenDays, 'yyyy-MM-dd'));
       setTaxRatePercent(business.defaultTaxRate || 16);
 
       if (initialSale) {
@@ -413,7 +414,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                   <label className="block font-bold text-gray-700 mb-1">Estado de la Factura</label>
                   <select
                     value={status}
-                    onChange={(e) => setStatus(e.target.value as any)}
+                    onChange={(e) => setStatus(e.target.value as InvoiceStatus)}
                     className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white focus:outline-none focus:border-amber-500"
                   >
                     <option value="Emitida">Emitida (Por Cobrar)</option>

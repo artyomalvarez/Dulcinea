@@ -56,9 +56,11 @@ export const ProfitabilityReportModal: React.FC<ProfitabilityReportModalProps> =
     window.print();
   };
 
+  const firstMonth = monthlyData[0];
+  const lastMonth = monthlyData[monthlyData.length - 1];
   const periodLabel =
-    monthlyData.length > 0
-      ? `${monthlyData[0].label} – ${monthlyData[monthlyData.length - 1].label}`
+    firstMonth && lastMonth
+      ? `${firstMonth.label} – ${lastMonth.label}`
       : 'Consolidado Histórico';
 
   return (

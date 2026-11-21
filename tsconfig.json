@@ -15,6 +15,9 @@
     "isolatedModules": true,
     "moduleDetection": "force",
     "allowJs": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
     "jsx": "react-jsx",
     "paths": {
       "@/*": [

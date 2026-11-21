@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import {
   Printer,
   X,
@@ -43,11 +45,7 @@ export const RecipeBookPdfModal: React.FC<RecipeBookPdfModalProps> = ({
     window.print();
   };
 
-  const currentDate = new Date().toLocaleDateString('es-ES', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  });
+  const currentDate = format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: es });
 
   const avgCostPerUnit =
     filteredProducts.length > 0

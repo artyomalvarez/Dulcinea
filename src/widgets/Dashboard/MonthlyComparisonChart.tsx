@@ -59,9 +59,16 @@ export const MonthlyComparisonChart: React.FC<MonthlyComparisonChartProps> = ({
   const bestMonth = [...monthlyData].sort((a, b) => b.ventasTotales - a.ventasTotales)[0];
 
   // Custom Recharts Tooltip
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload as MonthlyDataPoint;
+  interface CustomTooltipProps {
+    active?: boolean;
+    payload?: Array<{ payload: MonthlyDataPoint }>;
+    label?: string | number;
+  }
+
+  const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
+    const firstPayload = payload?.[0];
+    if (active && firstPayload) {
+      const data = firstPayload.payload;
       return (
         <div className="bg-white/95 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-amber-200/80 text-xs min-w-56 space-y-2">
           <div className="flex items-center justify-between pb-1.5 border-b border-gray-100">
@@ -115,16 +122,16 @@ export const MonthlyComparisonChart: React.FC<MonthlyComparisonChartProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-gray-100 p-5 sm:p-6 shadow-xs space-y-5">
+    <div className="bg-white rounded-2xl border border-dulcinea-copper/25 p-5 sm:p-6 shadow-sm space-y-5">
       {/* Chart Top Header & Controls */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
-              <BarChart3 className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-xl bg-dulcinea-cream text-dulcinea-midnight flex items-center justify-center">
+              <BarChart3 className="w-4 h-4 text-dulcinea-copper" />
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-bold text-gray-900 font-serif">
+              <h3 className="text-base sm:text-lg font-bold text-dulcinea-midnight font-serif">
                 Comparativa Mensual: Costos Totales vs Ventas
               </h3>
               <p className="text-xs text-gray-500">
@@ -137,13 +144,13 @@ export const MonthlyComparisonChart: React.FC<MonthlyComparisonChartProps> = ({
         {/* View toggles & filter */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Basis selector */}
-          <div className="flex items-center bg-gray-100 p-1 rounded-xl text-xs">
+          <div className="flex items-center bg-dulcinea-cream/55 p-1 rounded-xl text-xs">
             <button
               onClick={() => setCostBasis('lotes')}
-              className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg font-semibold transition-all duration-150 active:scale-95 cursor-pointer ${
                 costBasis === 'lotes'
-                  ? 'bg-white text-gray-900 shadow-2xs'
-                  : 'text-gray-500 hover:text-gray-900'
+                  ? 'bg-white text-dulcinea-midnight shadow-sm'
+                  : 'text-stone-600 hover:text-dulcinea-midnight'
               }`}
               title="Compara ventas con el total de insumos invertidos en lotes horneados"
             >
@@ -151,10 +158,10 @@ export const MonthlyComparisonChart: React.FC<MonthlyComparisonChartProps> = ({
             </button>
             <button
               onClick={() => setCostBasis('ventas')}
-              className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg font-semibold transition-all duration-150 active:scale-95 cursor-pointer ${
                 costBasis === 'ventas'
-                  ? 'bg-white text-gray-900 shadow-2xs'
-                  : 'text-gray-500 hover:text-gray-900'
+                  ? 'bg-white text-dulcinea-midnight shadow-sm'
+                  : 'text-stone-600 hover:text-dulcinea-midnight'
               }`}
               title="Compara ventas con el costo de insumos de los productos vendidos"
             >
@@ -166,9 +173,9 @@ export const MonthlyComparisonChart: React.FC<MonthlyComparisonChartProps> = ({
           <div className="flex items-center bg-stone-100 p-1 rounded-xl text-xs border border-stone-200/80">
             <button
               onClick={() => setChartType('barras')}
-              className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+              className={`px-3 py-1 rounded-lg font-bold transition-all duration-150 active:scale-95 cursor-pointer ${
                 chartType === 'barras'
-                  ? 'bg-rose-700 text-white shadow-2xs'
+                  ? 'bg-dulcinea-midnight text-white shadow-sm'
                   : 'text-stone-700 hover:bg-stone-200/70'
               }`}
             >
@@ -176,9 +183,9 @@ export const MonthlyComparisonChart: React.FC<MonthlyComparisonChartProps> = ({
             </button>
             <button
               onClick={() => setChartType('area')}
-              className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+              className={`px-3 py-1 rounded-lg font-bold transition-all duration-150 active:scale-95 cursor-pointer ${
                 chartType === 'area'
-                  ? 'bg-rose-700 text-white shadow-2xs'
+                  ? 'bg-dulcinea-midnight text-white shadow-sm'
                   : 'text-stone-700 hover:bg-stone-200/70'
               }`}
             >
@@ -190,10 +197,10 @@ export const MonthlyComparisonChart: React.FC<MonthlyComparisonChartProps> = ({
           {onOpenReport && (
             <button
               onClick={onOpenReport}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-dulcinea-midnight hover:bg-[#142433] text-white text-xs font-bold transition-all duration-150 active:scale-95 shadow-sm cursor-pointer"
               title="Descargar reporte resumen consolidado en PDF"
             >
-              <FileText className="w-3.5 h-3.5" />
+              <FileText className="w-3.5 h-3.5 text-dulcinea-copper" />
               <span>Reporte PDF</span>
             </button>
           )}
@@ -201,21 +208,21 @@ export const MonthlyComparisonChart: React.FC<MonthlyComparisonChartProps> = ({
       </div>
 
       {/* Mini KPI Highlights Strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gradient-to-r from-amber-50/70 via-stone-50/50 to-rose-50/70 p-3.5 rounded-2xl border border-amber-200/50 text-xs">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-dulcinea-cream/40 p-3.5 rounded-2xl border border-dulcinea-copper/30 text-xs">
         <div>
-          <span className="text-[10px] uppercase font-bold text-gray-400 block">
+          <span className="text-[10px] uppercase font-bold text-stone-500 block">
             Ventas Acumuladas
           </span>
-          <span className="text-sm sm:text-base font-bold text-gray-900 font-mono mt-0.5 block">
+          <span className="text-sm sm:text-base font-bold text-dulcinea-midnight font-mono mt-0.5 block">
             {formatCurrency(totalPeriodSales, business.currencySymbol)}
           </span>
         </div>
 
         <div>
-          <span className="text-[10px] uppercase font-bold text-gray-400 block">
+          <span className="text-[10px] uppercase font-bold text-stone-500 block">
             Costos Acumulados
           </span>
-          <span className="text-sm sm:text-base font-bold text-rose-700 font-mono mt-0.5 block">
+          <span className="text-sm sm:text-base font-bold text-dulcinea-cherry font-mono mt-0.5 block">
             {formatCurrency(totalPeriodCosts, business.currencySymbol)}
           </span>
         </div>
@@ -230,10 +237,10 @@ export const MonthlyComparisonChart: React.FC<MonthlyComparisonChartProps> = ({
         </div>
 
         <div>
-          <span className="text-[10px] uppercase font-bold text-gray-400 block">
+          <span className="text-[10px] uppercase font-bold text-stone-500 block">
             Mes con Mayor Venta
           </span>
-          <span className="text-xs sm:text-sm font-bold text-amber-900 mt-0.5 block truncate">
+          <span className="text-xs sm:text-sm font-bold text-dulcinea-midnight mt-0.5 block truncate">
             {bestMonth ? `${bestMonth.label} (${formatCurrency(bestMonth.ventasTotales, business.currencySymbol)})` : 'N/A'}
           </span>
         </div>

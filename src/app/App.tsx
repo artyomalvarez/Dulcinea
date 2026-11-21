@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import {
   BusinessProfile,
   Ingredient,
@@ -12,13 +13,12 @@ import {
   ProductionBatch,
   Sale,
 } from '../entities';
-import { storageAdapter } from '../shared/api/localStorage';
-import { applySaleToBatches, revertSaleFromBatches } from '../shared/lib';
+import { useAppStore } from '../shared/store/useAppStore';
 import { Header, ActiveTab } from '../widgets/Header';
 import { SettingsModal } from '../widgets/SettingsModal';
 import { ProductFormModal } from '../features/products/components/ProductFormModal';
 import { ProductionBatchModal } from '../features/production/components/ProductionList';
-import { SaleFormModal } from '../features/sales/components/SalesList';
+import { SaleFormModal } from '../features/sales/components/SaleFormModal';
 import { InvoiceModal } from '../features/invoices/components/InvoiceModal';
 import { InvoiceViewer } from '../features/invoices/components/InvoiceViewer';
 import { ProfitabilityCalculatorModal } from '../features/profitability/components/ProfitabilityCalculatorModal';
@@ -34,15 +34,29 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [catalogSubTab, setCatalogSubTab] = useState<'recipes' | 'ingredients'>('recipes');
 
-  // Application Data initialized via localStorage adapter
-  const [business, setBusiness] = useState<BusinessProfile>(() => storageAdapter.getBusinessProfile());
-  const [ingredients, setIngredients] = useState<Ingredient[]>(() => storageAdapter.getIngredients());
-  const [products, setProducts] = useState<Product[]>(() => storageAdapter.getProducts());
-  const [batches, setBatches] = useState<ProductionBatch[]>(() => storageAdapter.getBatches());
-  const [sales, setSales] = useState<Sale[]>(() => storageAdapter.getSales());
-  const [invoices, setInvoices] = useState<Invoice[]>(() => storageAdapter.getInvoices());
+  // Global Zustand Store
+  const {
+    business,
+    ingredients,
+    products,
+    batches,
+    sales,
+    invoices,
+    saveProduct,
+    deleteProduct,
+    saveIngredient,
+    deleteIngredient,
+    saveBatch,
+    deleteBatch,
+    saveSale,
+    deleteSale,
+    saveInvoice,
+    deleteInvoice,
+    updateInvoiceStatus,
+    saveBusiness,
+  } = useAppStore();
 
-  // Modal States
+  // Modal UI States
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
@@ -63,156 +77,71 @@ export default function App() {
 
   const [isCalculatorModalOpen, setIsCalculatorModalOpen] = useState(false);
 
-  // Sync from storage
-  const reloadDataFromStorage = () => {
-    setBusiness(storageAdapter.getBusinessProfile());
-    setIngredients(storageAdapter.getIngredients());
-    setProducts(storageAdapter.getProducts());
-    setBatches(storageAdapter.getBatches());
-    setSales(storageAdapter.getSales());
-    setInvoices(storageAdapter.getInvoices());
-  };
-
-  // Products CRUD
-  const handleSaveProduct = (newProd: Product) => {
-    const current = storageAdapter.getProducts();
-    const exists = current.some((p) => p.id === newProd.id);
-    const updated = exists
-      ? current.map((p) => (p.id === newProd.id ? newProd : p))
-      : [newProd, ...current];
-    storageAdapter.saveProducts(updated);
-    setProducts(updated);
+  const handleSaveProduct = (prod: Product) => {
+    saveProduct(prod);
+    toast.success(`Receta "${prod.name}" guardada correctamente.`);
   };
 
   const handleDeleteProduct = (id: string) => {
-    const updated = storageAdapter.getProducts().filter((p) => p.id !== id);
-    storageAdapter.saveProducts(updated);
-    setProducts(updated);
+    deleteProduct(id);
+    toast.info('Producto eliminado del catálogo.');
   };
 
-  // Ingredients CRUD
-  const handleSaveIngredient = (newIng: Ingredient) => {
-    const current = storageAdapter.getIngredients();
-    const exists = current.some((i) => i.id === newIng.id);
-    const updated = exists
-      ? current.map((i) => (i.id === newIng.id ? newIng : i))
-      : [newIng, ...current];
-    storageAdapter.saveIngredients(updated);
-    setIngredients(updated);
+  const handleSaveIngredient = (ing: Ingredient) => {
+    saveIngredient(ing);
+    toast.success(`Insumo "${ing.name}" guardado.`);
   };
 
   const handleDeleteIngredient = (id: string) => {
-    const updated = storageAdapter.getIngredients().filter((i) => i.id !== id);
-    storageAdapter.saveIngredients(updated);
-    setIngredients(updated);
+    deleteIngredient(id);
+    toast.info('Insumo eliminado.');
   };
 
-  // Batches CRUD
-  const handleSaveBatch = (newBatch: ProductionBatch) => {
-    const current = storageAdapter.getBatches();
-    const exists = current.some((b) => b.id === newBatch.id);
-    const updated = exists
-      ? current.map((b) => (b.id === newBatch.id ? newBatch : b))
-      : [newBatch, ...current];
-    storageAdapter.saveBatches(updated);
-    setBatches(updated);
+  const handleSaveBatch = (batch: ProductionBatch) => {
+    saveBatch(batch);
+    toast.success(`Lote ${batch.batchCode} registrado.`);
   };
 
   const handleDeleteBatch = (id: string) => {
-    const updated = storageAdapter.getBatches().filter((b) => b.id !== id);
-    storageAdapter.saveBatches(updated);
-    setBatches(updated);
+    deleteBatch(id);
+    toast.info('Lote eliminado.');
   };
 
-  // Sales CRUD & Stock reconciliation
-  const handleSaveSale = (newSale: Sale) => {
-    const currentSales = storageAdapter.getSales();
-    const currentBatches = storageAdapter.getBatches();
-
-    const existingSale = currentSales.find((s) => s.id === newSale.id);
-
-    let workingBatches = currentBatches;
-    if (existingSale) {
-      workingBatches = revertSaleFromBatches(existingSale, workingBatches);
-    }
-
-    const updatedBatches = applySaleToBatches(newSale, workingBatches);
-
-    storageAdapter.saveBatches(updatedBatches);
-    setBatches(updatedBatches);
-
-    const updatedSales = existingSale
-      ? currentSales.map((s) => (s.id === newSale.id ? newSale : s))
-      : [newSale, ...currentSales];
-
-    storageAdapter.saveSales(updatedSales);
-    setSales(updatedSales);
+  const handleSaveSale = (sale: Sale) => {
+    saveSale(sale);
+    toast.success(`Venta ${sale.saleNumber} guardada con éxito.`);
   };
 
-  const handleDeleteSale = (saleId: string) => {
-    const currentSales = storageAdapter.getSales();
-    const saleToDelete = currentSales.find((s) => s.id === saleId);
-    if (!saleToDelete) return;
-
-    const currentBatches = storageAdapter.getBatches();
-    const restoredBatches = revertSaleFromBatches(saleToDelete, currentBatches);
-
-    storageAdapter.saveBatches(restoredBatches);
-    setBatches(restoredBatches);
-
-    const updatedSales = currentSales.filter((s) => s.id !== saleId);
-    storageAdapter.saveSales(updatedSales);
-    setSales(updatedSales);
+  const handleDeleteSale = (id: string) => {
+    deleteSale(id);
+    toast.info('Venta eliminada y stock restaurado.');
   };
 
-  // Invoices CRUD
-  const handleSaveInvoice = (newInv: Invoice) => {
-    const current = storageAdapter.getInvoices();
-    const exists = current.some((i) => i.id === newInv.id);
-    const updated = exists
-      ? current.map((i) => (i.id === newInv.id ? newInv : i))
-      : [newInv, ...current];
-    storageAdapter.saveInvoices(updated);
-    setInvoices(updated);
+  const handleSaveInvoice = (inv: Invoice) => {
+    saveInvoice(inv);
+    toast.success(`Factura ${inv.invoiceNumber} generada.`);
   };
 
   const handleDeleteInvoice = (id: string) => {
-    const updated = storageAdapter.getInvoices().filter((i) => i.id !== id);
-    storageAdapter.saveInvoices(updated);
-    setInvoices(updated);
+    deleteInvoice(id);
+    toast.info('Factura eliminada.');
   };
 
   const handleUpdateInvoiceStatus = (id: string, status: Invoice['status']) => {
-    const updated = storageAdapter.getInvoices().map((inv) =>
-      inv.id === id ? { ...inv, status } : inv
-    );
-    storageAdapter.saveInvoices(updated);
-    setInvoices(updated);
+    updateInvoiceStatus(id, status);
     if (viewingInvoice && viewingInvoice.id === id) {
       setViewingInvoice({ ...viewingInvoice, status });
     }
+    toast.success(`Estado actualizado a "${status}".`);
   };
 
-  const handleGenerateInvoiceFromSale = (sale: Sale) => {
-    setSaleForInvoice(sale);
-    setIsInvoiceModalOpen(true);
-  };
-
-  // Business settings
   const handleSaveBusiness = (updated: BusinessProfile) => {
-    storageAdapter.saveBusinessProfile(updated);
-    setBusiness(updated);
-  };
-
-  // Handlers for fast production from catalog
-  const handleMakeBatchFromProduct = (product: Product) => {
-    setPreselectedProductForBatch(product);
-    setIsBatchModalOpen(true);
+    saveBusiness(updated);
+    toast.success('Configuración del negocio actualizada.');
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] text-[#2C3E50] flex flex-col font-sans selection:bg-[#D4A373]/30 selection:text-[#1A2E40]">
-      {/* Rebranded Header (Dulcinea - 4 tabs) */}
+    <div className="min-h-screen bg-dulcinea-dots text-dulcinea-midnight flex flex-col font-sans selection:bg-dulcinea-copper/30 selection:text-dulcinea-midnight">
       <Header
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -227,7 +156,6 @@ export default function App() {
         }}
       />
 
-      {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12">
         {activeTab === 'dashboard' && (
           <DashboardPage
@@ -274,7 +202,10 @@ export default function App() {
               setIsProductModalOpen(true);
             }}
             onDeleteProduct={handleDeleteProduct}
-            onMakeBatch={handleMakeBatchFromProduct}
+            onMakeBatch={(product) => {
+              setPreselectedProductForBatch(product);
+              setIsBatchModalOpen(true);
+            }}
             onSaveIngredient={handleSaveIngredient}
             onDeleteIngredient={handleDeleteIngredient}
             onOpenCalculator={() => setIsCalculatorModalOpen(true)}
@@ -301,7 +232,10 @@ export default function App() {
             preselectedProductForBatch={preselectedProductForBatch}
             onSaveSale={handleSaveSale}
             onDeleteSale={handleDeleteSale}
-            onGenerateInvoiceFromSale={handleGenerateInvoiceFromSale}
+            onGenerateInvoiceFromSale={(sale) => {
+              setSaleForInvoice(sale);
+              setIsInvoiceModalOpen(true);
+            }}
             isOpenSaleModal={isSaleModalOpen}
             onCloseSaleModal={() => {
               setIsSaleModalOpen(false);
@@ -340,19 +274,17 @@ export default function App() {
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-stone-200/80 py-4 text-center text-xs text-stone-400 no-print">
+      <footer className="bg-white/90 backdrop-blur-xs border-t border-dulcinea-copper/25 py-4 text-center text-xs text-stone-500 no-print">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span className="font-medium text-stone-600">
+          <span className="font-semibold text-dulcinea-midnight font-serif">
             {business.businessName || 'Dulcinea'} &bull; Taller de Repostería Artesanal
           </span>
-          <span className="font-mono text-[11px] text-stone-400">
+          <span className="font-mono text-[11px] text-stone-500 bg-dulcinea-cream/50 px-3 py-1 rounded-full border border-dulcinea-copper/20">
             Costo Unitario = Insumos ÷ Rendimiento | Utilidad = Venta - Costo
           </span>
         </div>
       </footer>
 
-      {/* Global Modals */}
       <ProductFormModal
         isOpen={isProductModalOpen}
         onClose={() => {
@@ -427,7 +359,7 @@ export default function App() {
         onClose={() => setIsSettingsOpen(false)}
         business={business}
         onSaveBusiness={handleSaveBusiness}
-        onDataReload={reloadDataFromStorage}
+        onDataReload={() => {}}
         initialTab={settingsInitialTab}
       />
     </div>

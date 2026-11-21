@@ -40,12 +40,12 @@ export const AdminPage: React.FC<AdminPageProps> = ({
         {/* Recetario PDF */}
         <button
           onClick={() => setIsRecipeBookOpen(true)}
-          className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-xs hover:shadow-md hover:border-[#D4A373] transition-all text-left group cursor-pointer"
+          className="bg-white p-5 rounded-2xl border border-dulcinea-copper/25 shadow-sm hover:shadow-md hover:border-dulcinea-copper transition-all duration-150 active:scale-95 text-left group cursor-pointer"
         >
-          <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] group-hover:bg-[#D4A373]/20 text-[#1A2E40] group-hover:text-[#C88A58] flex items-center justify-center transition-colors">
-            <BookOpen className="w-5 h-5 text-[#D4A373]" />
+          <div className="w-10 h-10 rounded-xl bg-dulcinea-cream/70 group-hover:bg-dulcinea-copper/25 text-dulcinea-midnight flex items-center justify-center transition-colors">
+            <BookOpen className="w-5 h-5 text-dulcinea-copper" />
           </div>
-          <h3 className="mt-3 text-sm font-bold text-[#1A2E40] font-serif">
+          <h3 className="mt-3 text-sm font-bold text-dulcinea-midnight font-serif">
             Exportar Recetario PDF
           </h3>
           <p className="mt-1 text-xs text-slate-500 leading-relaxed">
@@ -56,12 +56,12 @@ export const AdminPage: React.FC<AdminPageProps> = ({
         {/* Reporte de Rentabilidad PDF */}
         <button
           onClick={() => setIsProfitReportOpen(true)}
-          className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-xs hover:shadow-md hover:border-[#D4A373] transition-all text-left group cursor-pointer"
+          className="bg-white p-5 rounded-2xl border border-dulcinea-copper/25 shadow-sm hover:shadow-md hover:border-dulcinea-copper transition-all duration-150 active:scale-95 text-left group cursor-pointer"
         >
-          <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] group-hover:bg-[#D4A373]/20 text-[#1A2E40] flex items-center justify-center transition-colors">
-            <FileText className="w-5 h-5 text-[#D4A373]" />
+          <div className="w-10 h-10 rounded-xl bg-dulcinea-cream/70 group-hover:bg-dulcinea-copper/25 text-dulcinea-midnight flex items-center justify-center transition-colors">
+            <FileText className="w-5 h-5 text-dulcinea-copper" />
           </div>
-          <h3 className="mt-3 text-sm font-bold text-[#1A2E40] font-serif">
+          <h3 className="mt-3 text-sm font-bold text-dulcinea-midnight font-serif">
             Reporte de Rentabilidad
           </h3>
           <p className="mt-1 text-xs text-slate-500 leading-relaxed">
@@ -72,12 +72,12 @@ export const AdminPage: React.FC<AdminPageProps> = ({
         {/* Ajustes y Configuración */}
         <button
           onClick={onOpenSettings}
-          className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-xs hover:shadow-md hover:border-[#D4A373] transition-all text-left group cursor-pointer"
+          className="bg-white p-5 rounded-2xl border border-dulcinea-copper/25 shadow-sm hover:shadow-md hover:border-dulcinea-copper transition-all duration-150 active:scale-95 text-left group cursor-pointer"
         >
-          <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] group-hover:bg-[#1A2E40]/10 text-[#1A2E40] flex items-center justify-center transition-colors">
-            <Settings className="w-5 h-5 text-[#1A2E40]" />
+          <div className="w-10 h-10 rounded-xl bg-dulcinea-cream/70 group-hover:bg-dulcinea-midnight/10 text-dulcinea-midnight flex items-center justify-center transition-colors">
+            <Settings className="w-5 h-5 text-dulcinea-midnight" />
           </div>
-          <h3 className="mt-3 text-sm font-bold text-[#1A2E40] font-serif">
+          <h3 className="mt-3 text-sm font-bold text-dulcinea-midnight font-serif">
             Ajustes del Negocio
           </h3>
           <p className="mt-1 text-xs text-slate-500 leading-relaxed">

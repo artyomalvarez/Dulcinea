@@ -1,3 +1,5 @@
+import { format, isValid, parseISO } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { Product, ProductionBatch, Sale } from '../../entities';
 import { calculateProductMetrics } from './CostCalculator';
 import { calculateSaleItemTotals, calculateSaleTotals } from './SalesService';
@@ -68,7 +70,8 @@ export function groupMonthlyProfitability(
 
   sales.forEach((s) => {
     if (!s.date) return;
-    const key = s.date.slice(0, 7); // "YYYY-MM"
+    const parsedDate = parseISO(s.date);
+    const key = isValid(parsedDate) ? format(parsedDate, 'yyyy-MM') : s.date.slice(0, 7);
     const current = map.get(key) || {
       ventas: 0,
       costoLotes: 0,
@@ -88,7 +91,8 @@ export function groupMonthlyProfitability(
 
   batches.forEach((b) => {
     if (!b.date) return;
-    const key = b.date.slice(0, 7); // "YYYY-MM"
+    const parsedDate = parseISO(b.date);
+    const key = isValid(parsedDate) ? format(parsedDate, 'yyyy-MM') : b.date.slice(0, 7);
     const current = map.get(key) || {
       ventas: 0,
       costoLotes: 0,
@@ -105,7 +109,7 @@ export function groupMonthlyProfitability(
 
   return sortedKeys.map((key) => {
     const entry = map.get(key)!;
-    const [year, monthStr] = key.split('-');
+    const [year = '', monthStr = '01'] = key.split('-');
     const monthIdx = parseInt(monthStr, 10) - 1;
     const shortLabel = `${SHORT_MONTH_NAMES[monthIdx] || monthStr} ${year}`;
     const longLabel = `${LONG_MONTH_NAMES[monthIdx] || monthStr} ${year}`;

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { format } from 'date-fns';
 import {
   ChefHat,
   Plus,
@@ -45,7 +46,7 @@ export const ProductionBatchModal: React.FC<ProductionBatchModalProps> = ({
   onSaveBatch,
 }) => {
   const [selectedProductId, setSelectedProductId] = useState<string>('');
-  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState<string>(() => format(new Date(), 'yyyy-MM-dd'));
   const [numberOfBatches, setNumberOfBatches] = useState<number>(3);
   const [unitsPerBatch, setUnitsPerBatch] = useState<number>(5);
   const [totalSuppliesCost, setTotalSuppliesCost] = useState<number>(75);
@@ -62,17 +63,19 @@ export const ProductionBatchModal: React.FC<ProductionBatchModalProps> = ({
       setNumberOfBatches(3);
       setTotalSuppliesCost(Math.round((batchCost || 25) * 3 * 100) / 100);
       setNotes(`Elaboración de 3 lotes de ${preselectedProduct.name}.`);
-    } else if (products.length > 0 && !selectedProductId) {
+    } else if (!selectedProductId) {
       const first = products[0];
-      const batchCost = CostCalculator.calculateBatchCost(
-        first.ingredients,
-        first.otherDirectCosts
-      );
-      setSelectedProductId(first.id);
-      setUnitsPerBatch(first.batchYieldUnits || 5);
-      setNumberOfBatches(3);
-      setTotalSuppliesCost(Math.round((batchCost || 25) * 3 * 100) / 100);
-      setNotes(`Elaboración de lote para ${first.name}.`);
+      if (first) {
+        const batchCost = CostCalculator.calculateBatchCost(
+          first.ingredients,
+          first.otherDirectCosts
+        );
+        setSelectedProductId(first.id);
+        setUnitsPerBatch(first.batchYieldUnits || 5);
+        setNumberOfBatches(3);
+        setTotalSuppliesCost(Math.round((batchCost || 25) * 3 * 100) / 100);
+        setNotes(`Elaboración de lote para ${first.name}.`);
+      }
     }
   }, [preselectedProduct, isOpen, products]);
 
@@ -335,9 +338,9 @@ export const ProductionList: React.FC<ProductionListProps> = ({
   return (
     <div className="space-y-5">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-stone-200/80 shadow-2xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-dulcinea-copper/25 shadow-sm">
         <div>
-          <h2 className="text-lg sm:text-xl font-bold text-stone-800 font-serif">
+          <h2 className="text-lg sm:text-xl font-bold text-dulcinea-midnight font-serif">
             Historial de Lotes Horneados
           </h2>
           <p className="text-xs text-stone-500 mt-0.5">
@@ -347,15 +350,15 @@ export const ProductionList: React.FC<ProductionListProps> = ({
 
         <button
           onClick={onOpenNewModal}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-rose-700 hover:bg-rose-800 text-white font-bold text-xs sm:text-sm shadow-sm transition-all cursor-pointer shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-dulcinea-midnight hover:bg-[#142433] text-dulcinea-cream font-bold text-xs sm:text-sm shadow-sm transition-all duration-150 active:scale-95 cursor-pointer shrink-0"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4 text-dulcinea-copper" />
           <span>Elaborar Nuevo Lote</span>
         </button>
       </div>
 
       {/* Batches Table */}
-      <div className="bg-white rounded-3xl border border-stone-200/80 shadow-2xs overflow-hidden">
+      <div className="bg-white rounded-2xl border border-dulcinea-copper/25 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
@@ -414,7 +417,7 @@ export const ProductionList: React.FC<ProductionListProps> = ({
                       </td>
 
                       <td className="py-3.5 px-4 text-right">
-                        <span className="font-mono font-bold text-rose-800 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200/70">
+                        <span className="font-mono font-bold text-dulcinea-cherry bg-dulcinea-cream/70 px-2 py-0.5 rounded-lg border border-dulcinea-copper/35">
                           {formatCurrency(batch.costPerUnit, business.currencySymbol)} / u
                         </span>
                       </td>
@@ -445,11 +448,11 @@ export const ProductionList: React.FC<ProductionListProps> = ({
                           {prod && remaining > 0 && onOpenSaleModalForProduct && (
                             <button
                               onClick={() => onOpenSaleModalForProduct(prod, batch)}
-                              className="px-2.5 py-1 rounded-xl bg-rose-700 hover:bg-rose-800 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer"
+                              className="px-2.5 py-1 rounded-xl bg-dulcinea-midnight hover:bg-[#142433] text-dulcinea-cream font-bold text-[11px] flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
                               title="Registrar venta de este lote"
                             >
                               <span>Vender</span>
-                              <ArrowRight className="w-3 h-3" />
+                              <ArrowRight className="w-3 h-3 text-dulcinea-copper" />
                             </button>
                           )}
                           <button
@@ -458,7 +461,7 @@ export const ProductionList: React.FC<ProductionListProps> = ({
                                 onDeleteBatch(batch.id);
                               }
                             }}
-                            className="p-1.5 text-stone-400 hover:text-rose-600 rounded-lg"
+                            className="p-1.5 text-stone-400 hover:text-dulcinea-cherry hover:bg-dulcinea-cherry/10 rounded-lg transition-all active:scale-95 cursor-pointer"
                           >
                             <X className="w-3.5 h-3.5" />
                           </button>

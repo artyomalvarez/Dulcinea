@@ -1,16 +1,31 @@
 @import "tailwindcss";
 
+@theme {
+  --color-dulcinea-midnight: #1A2E40;
+  --color-dulcinea-cream: #F9E7D3;
+  --color-dulcinea-copper: #D4A373;
+  --color-dulcinea-cherry: #C0392B;
+  --font-sans: 'Nunito', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Playfair Display', Georgia, serif;
+}
+
 @layer base {
   body {
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-    color: #2C3E50;
-    background-color: #FAF8F5;
+    font-family: var(--font-sans);
+    color: #1A2E40;
+    background-color: #FCF6EE;
   }
 
   h1, h2, h3, .font-serif {
-    font-family: 'Playfair Display', Georgia, serif;
+    font-family: var(--font-serif);
     color: #1A2E40;
   }
+}
+
+.bg-dulcinea-dots {
+  background-color: #FCF6EE;
+  background-image: radial-gradient(rgba(212, 163, 115, 0.22) 1.25px, transparent 1.25px);
+  background-size: 22px 22px;
 }
 
 @media print {
@@ -19,8 +34,10 @@
     margin: 12mm;
   }
 
-  body {
+  body,
+  .bg-dulcinea-dots {
     background-color: #ffffff !important;
+    background-image: none !important;
     color: #000000 !important;
   }
 

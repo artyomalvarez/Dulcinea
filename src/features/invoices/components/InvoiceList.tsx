@@ -53,15 +53,15 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
 
         <button
           onClick={onOpenCreateModal}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#1A2E40] hover:bg-[#142433] text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-dulcinea-midnight hover:bg-[#142433] text-dulcinea-cream font-bold text-xs sm:text-sm shadow-sm transition-all duration-150 active:scale-95 cursor-pointer"
         >
-          <Plus className="w-4 h-4 text-[#D4A373]" />
+          <Plus className="w-4 h-4 text-dulcinea-copper" />
           <span>Nueva Factura</span>
         </button>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-stone-200/80 shadow-xs">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-dulcinea-copper/25 shadow-sm">
         <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 absolute left-3 top-3 text-stone-400" />
           <input
@@ -69,7 +69,7 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
             placeholder="Buscar por folio, cliente o NIT..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-600"
+            className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-dulcinea-copper/30 focus:border-dulcinea-copper"
           />
         </div>
 
@@ -78,7 +78,7 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="text-xs py-2 px-3 rounded-xl border border-stone-200 bg-white text-stone-700 focus:outline-none focus:border-rose-600"
+            className="text-xs py-2 px-3 rounded-xl border border-stone-200 bg-white text-stone-700 focus:outline-none focus:border-dulcinea-copper"
           >
             <option value="todos">Todos los estados</option>
             <option value="Emitida">Emitida</option>
@@ -89,7 +89,7 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
       </div>
 
       {/* Invoices Table */}
-      <div className="bg-white rounded-2xl border border-stone-200/80 shadow-xs overflow-hidden">
+      <div className="bg-white rounded-2xl border border-dulcinea-copper/25 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
@@ -165,10 +165,10 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
                       <div className="flex items-center justify-center gap-1.5">
                         <button
                           onClick={() => onViewInvoice(inv)}
-                          className="px-2.5 py-1 rounded-lg bg-stone-900 hover:bg-stone-800 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                          className="px-2.5 py-1 rounded-xl bg-dulcinea-midnight hover:bg-[#142433] text-dulcinea-cream font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-all active:scale-95 shadow-sm"
                           title="Ver e Imprimir / Descargar PDF"
                         >
-                          <Printer className="w-3.5 h-3.5 text-amber-400" />
+                          <Printer className="w-3.5 h-3.5 text-dulcinea-copper" />
                           <span>Imprimir</span>
                         </button>
 
@@ -178,7 +178,7 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
                               onDeleteInvoice(inv.id);
                             }
                           }}
-                          className="p-1.5 text-gray-400 hover:text-rose-600 rounded-lg"
+                          className="p-1.5 text-gray-400 hover:text-dulcinea-cherry hover:bg-dulcinea-cherry/10 rounded-lg transition-all active:scale-95 cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

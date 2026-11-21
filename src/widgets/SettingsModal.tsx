@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { format } from 'date-fns';
+import { toast } from 'sonner';
 import {
   X,
   Settings,
@@ -8,7 +10,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { BusinessProfile } from '../entities';
-import { storageAdapter } from '../shared/api/localStorage';
+import { useAppStore } from '../shared/store/useAppStore';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -94,29 +96,36 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     onClose();
   };
 
+  const exportBackup = useAppStore((s) => s.exportBackup);
+  const importBackup = useAppStore((s) => s.importBackup);
+  const resetToDefaults = useAppStore((s) => s.resetToDefaults);
+
   const handleDownloadBackup = () => {
-    const jsonStr = storageAdapter.exportBackup();
+    const jsonStr = exportBackup();
     const blob = new Blob([jsonStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `dulcinea_backup_${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `dulcinea_backup_${format(new Date(), 'yyyy-MM-dd')}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    toast.success('Respaldo JSON descargado.');
   };
 
   const handleImportBackup = () => {
     if (!importText.trim()) return;
-    const ok = storageAdapter.importBackup(importText.trim());
+    const ok = importBackup(importText.trim());
     if (ok) {
       setImportStatus('success');
       onDataReload();
+      toast.success('Copia de seguridad restaurada con éxito.');
       setTimeout(() => {
         setImportStatus(null);
         onClose();
       }, 1200);
     } else {
       setImportStatus('error');
+      toast.error('El archivo JSON de respaldo es inválido o está corrupto.');
     }
   };
 
@@ -126,8 +135,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         '¿Deseas restablecer los datos de ejemplo del taller de repostería? Esto recargará las recetas modelo de pastel, galletas y cupcakes.'
       )
     ) {
-      storageAdapter.resetToDefaults();
+      resetToDefaults();
       onDataReload();
+      toast.info('Datos restablecidos a los ejemplos de fábrica.');
       onClose();
     }
   };

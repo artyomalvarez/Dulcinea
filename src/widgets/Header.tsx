@@ -1,10 +1,9 @@
 import React from 'react';
 import {
-  Cake,
-  TrendingUp,
-  BookOpen,
+  Croissant,
+  CakeSlice,
   ChefHat,
-  Briefcase,
+  Receipt,
   Settings,
   DatabaseBackup
 } from 'lucide-react';
@@ -32,13 +31,13 @@ export const Header: React.FC<HeaderProps> = ({
       id: 'dashboard',
       label: 'Inicio',
       subtitle: 'Resumen y métricas',
-      icon: <TrendingUp className="w-4 h-4" />,
+      icon: <CakeSlice className="w-4 h-4" />,
     },
     {
       id: 'catalog',
       label: 'Mi Catálogo',
       subtitle: 'Recetas e Insumos',
-      icon: <BookOpen className="w-4 h-4" />,
+      icon: <Croissant className="w-4 h-4" />,
     },
     {
       id: 'workshop',
@@ -50,7 +49,7 @@ export const Header: React.FC<HeaderProps> = ({
       id: 'admin',
       label: 'Administración',
       subtitle: 'Facturación y Reportes',
-      icon: <Briefcase className="w-4 h-4" />,
+      icon: <Receipt className="w-4 h-4" />,
     },
   ];
 
@@ -59,20 +58,20 @@ export const Header: React.FC<HeaderProps> = ({
     .replace(/DulceCosto/gi, 'Dulcinea');
 
   return (
-    <header className="bg-[#1A2E40] text-white border-b border-[#142433] shadow-md sticky top-0 z-30 no-print">
+    <header className="bg-dulcinea-midnight text-white border-b border-[#142433] shadow-md sticky top-0 z-30 no-print">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           {/* Logo & Brand Name */}
           <div className="flex items-center space-x-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-[#142433] border border-[#D4A373]/40 flex items-center justify-center text-[#FAF8F5] shadow-md">
-              <ChefHat className="w-6 h-6 text-[#FAF8F5]" />
+            <div className="w-11 h-11 rounded-2xl bg-[#142433] border border-dulcinea-copper/50 flex items-center justify-center text-dulcinea-cream shadow-md">
+              <ChefHat className="w-6 h-6 text-dulcinea-copper" />
             </div>
             <div>
               <div className="flex items-center gap-2.5">
-                <h1 className="text-xl sm:text-2xl font-bold text-[#FAF8F5] tracking-tight flex items-center gap-1.5 font-serif">
+                <h1 className="text-xl sm:text-2xl font-bold text-dulcinea-cream! tracking-tight flex items-center gap-1.5 font-serif">
                   {displayName}
                 </h1>
-                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#142433] text-[#D4A373] border border-[#D4A373]/30">
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#142433] text-dulcinea-copper border border-dulcinea-copper/35">
                   {business.currencySymbol} {business.currencyCode}
                 </span>
               </div>
@@ -87,17 +86,17 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={onOpenBackup}
               title="Respaldar o Restaurar Datos"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-white/10 text-xs font-semibold text-slate-200 bg-white/5 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl border border-white/15 text-xs font-semibold text-dulcinea-cream bg-white/5 hover:bg-white/10 hover:border-dulcinea-copper/40 transition-all duration-150 active:scale-95 cursor-pointer"
             >
-              <DatabaseBackup className="w-3.5 h-3.5 text-[#D4A373]" />
+              <DatabaseBackup className="w-3.5 h-3.5 text-dulcinea-copper" />
               <span>Respaldo</span>
             </button>
 
             <button
               onClick={onOpenSettings}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#D4A373] hover:bg-[#c88a58] text-[#1A2E40] text-xs font-bold transition-all cursor-pointer shadow-xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-dulcinea-copper hover:bg-[#c88a58] text-dulcinea-midnight text-xs font-bold transition-all duration-150 active:scale-95 cursor-pointer shadow-sm"
             >
-              <Settings className="w-3.5 h-3.5 text-[#1A2E40]" />
+              <Settings className="w-3.5 h-3.5 text-dulcinea-midnight" />
               <span>Ajustes</span>
             </button>
           </div>
@@ -111,15 +110,15 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`flex items-center gap-2.5 px-4 py-2.5 rounded-2xl text-left transition-all cursor-pointer border ${
+                className={`flex items-center gap-2.5 px-4 py-2.5 rounded-2xl text-left transition-all duration-150 active:scale-95 cursor-pointer border ${
                   isActive
-                    ? 'bg-white/15 text-white border-[#D4A373] shadow-xs'
+                    ? 'bg-white/15 text-white border-dulcinea-copper shadow-sm'
                     : 'bg-white/5 text-slate-300 border-transparent hover:bg-white/10 hover:text-white'
                 }`}
               >
                 <div
-                  className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                    isActive ? 'bg-[#D4A373] text-[#1A2E40]' : 'bg-white/10 text-[#D4A373]'
+                  className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                    isActive ? 'bg-dulcinea-copper text-dulcinea-midnight' : 'bg-white/10 text-dulcinea-copper'
                   }`}
                 >
                   {item.icon}
@@ -130,7 +129,7 @@ export const Header: React.FC<HeaderProps> = ({
                   </div>
                   <div
                     className={`text-[10px] truncate hidden sm:block ${
-                      isActive ? 'text-[#D4A373]' : 'text-slate-400'
+                      isActive ? 'text-dulcinea-cream' : 'text-slate-400'
                     }`}
                   >
                     {item.subtitle}

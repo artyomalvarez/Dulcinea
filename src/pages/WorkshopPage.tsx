@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ChefHat, ShoppingBag } from 'lucide-react';
 import { BusinessProfile, Product, ProductionBatch, Sale } from '../entities';
 import { ProductionList } from '../features/production/components/ProductionList';
 import { SalesList } from '../features/sales/components/SalesList';
@@ -51,21 +52,22 @@ export const WorkshopPage: React.FC<WorkshopPageProps> = ({
   return (
     <div className="space-y-6 pb-12">
       {/* Top Toggle Switch */}
-      <div className="flex items-center justify-between bg-white p-2.5 sm:p-3 rounded-2xl border border-stone-200/80 shadow-xs">
-        <div className="flex items-center bg-stone-100 p-1 rounded-xl w-full sm:w-auto">
+      <div className="flex items-center justify-between bg-white p-2.5 sm:p-3 rounded-2xl border border-dulcinea-copper/25 shadow-sm">
+        <div className="flex items-center bg-dulcinea-cream/55 p-1 rounded-xl w-full sm:w-auto">
           <button
             onClick={() => setSubTab('production')}
-            className={`flex-1 sm:flex-none px-5 py-2 rounded-lg font-bold text-xs sm:text-sm transition-all cursor-pointer flex items-center justify-center gap-2 ${
+            className={`flex-1 sm:flex-none px-5 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all duration-150 active:scale-95 cursor-pointer flex items-center justify-center gap-2 ${
               subTab === 'production'
-                ? 'bg-white text-stone-900 shadow-xs'
-                : 'text-stone-600 hover:text-stone-900'
+                ? 'bg-white text-dulcinea-midnight shadow-sm'
+                : 'text-stone-600 hover:text-dulcinea-midnight'
             }`}
           >
-            <span>🔥 Producción</span>
+            <ChefHat className="w-4 h-4 text-dulcinea-copper" />
+            <span>Producción</span>
             <span
               className={`text-[10px] px-1.5 py-0.5 rounded-full ${
                 subTab === 'production'
-                  ? 'bg-[#D4A373]/20 text-[#1A2E40]'
+                  ? 'bg-dulcinea-copper/25 text-dulcinea-midnight'
                   : 'bg-stone-200 text-stone-600'
               }`}
             >
@@ -75,16 +77,17 @@ export const WorkshopPage: React.FC<WorkshopPageProps> = ({
 
           <button
             onClick={() => setSubTab('sales')}
-            className={`flex-1 sm:flex-none px-5 py-2 rounded-lg font-bold text-xs sm:text-sm transition-all cursor-pointer flex items-center justify-center gap-2 ${
+            className={`flex-1 sm:flex-none px-5 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all duration-150 active:scale-95 cursor-pointer flex items-center justify-center gap-2 ${
               subTab === 'sales'
-                ? 'bg-white text-stone-900 shadow-xs'
-                : 'text-stone-600 hover:text-stone-900'
+                ? 'bg-white text-dulcinea-midnight shadow-sm'
+                : 'text-stone-600 hover:text-dulcinea-midnight'
             }`}
           >
-            <span>💵 Ventas</span>
+            <ShoppingBag className="w-4 h-4 text-dulcinea-copper" />
+            <span>Ventas</span>
             <span
               className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                subTab === 'sales' ? 'bg-[#D4A373]/20 text-[#1A2E40]' : 'bg-stone-200 text-stone-600'
+                subTab === 'sales' ? 'bg-dulcinea-copper/25 text-dulcinea-midnight' : 'bg-stone-200 text-stone-600'
               }`}
             >
               {sales.length}

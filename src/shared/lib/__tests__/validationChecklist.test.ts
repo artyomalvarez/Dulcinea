@@ -70,14 +70,14 @@ describe('Checklist de Validación (Feature-Sliced Design)', () => {
     const afterSaleBatches = applySaleToBatches(sale, initialBatches);
 
     // Verificar inmutabilidad (el arreglo original no fue mutado)
-    expect(initialBatches[0].unitsSold).toBe(12);
-    expect(initialBatches[1].unitsSold).toBe(0);
+    expect(initialBatches[0]?.unitsSold).toBe(12);
+    expect(initialBatches[1]?.unitsSold).toBe(0);
 
     // Verificar reparto multi-lote: 3 del Lote A (queda en 15/15 agotado) + 7 del Lote B (queda en 7/15 completado)
-    expect(afterSaleBatches[0].unitsSold).toBe(15);
-    expect(afterSaleBatches[0].status).toBe('agotado');
-    expect(afterSaleBatches[1].unitsSold).toBe(7);
-    expect(afterSaleBatches[1].status).toBe('completado');
+    expect(afterSaleBatches[0]?.unitsSold).toBe(15);
+    expect(afterSaleBatches[0]?.status).toBe('agotado');
+    expect(afterSaleBatches[1]?.unitsSold).toBe(7);
+    expect(afterSaleBatches[1]?.status).toBe('completado');
 
     // Borrar la venta y verificar que las 10 galletas regresan al inventario
     const afterRevertBatches = revertSaleFromBatches(sale, afterSaleBatches);
