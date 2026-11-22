@@ -41,4 +41,26 @@ describe('CostCalculator', () => {
     expect(CostCalculator.calculateBreakevenUnits(75, 0)).toBe(0);
     expect(CostCalculator.calculateBreakevenUnits(0, 12)).toBe(0);
   });
+
+  it('calcula métricas de daño y pérdida correctamente con calculateLossMetrics', () => {
+    const mockProduct = {
+      ingredients: [],
+      otherDirectCosts: 50,
+      batchYieldUnits: 10,
+      sellingPrice: 10,
+    };
+    // Costo por unidad: 50 / 10 = 5
+    // Utilidad por unidad: 10 - 5 = 5
+    // Si se dañan 2 panes:
+    // directCostLost = 2 * 5 = 10
+    // potentialRevenueLost = 2 * 10 = 20
+    // potentialProfitLost = 2 * 5 = 10
+    // unidades a recuperar: 10 / 5 = 2 panes
+    const metrics = CostCalculator.calculateLossMetrics(mockProduct, 2);
+    expect(metrics.directCostLost).toBe(10);
+    expect(metrics.potentialRevenueLost).toBe(20);
+    expect(metrics.potentialProfitLost).toBe(10);
+    expect(metrics.unitsToRecoverLoss).toBe(2);
+    expect(metrics.adjustedBatchProfit).toBe(30);
+  });
 });

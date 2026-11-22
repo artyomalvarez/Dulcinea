@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Search, FolderTree, ListFilter } from 'lucide-react';
+import { Plus, Search, FolderTree, ListFilter, AlertTriangle, Boxes, DollarSign } from 'lucide-react';
 import { BusinessProfile, Ingredient } from '../../../entities';
-import { normalizeCategoryName } from '../../../shared/lib';
+import { normalizeCategoryName, StockService, formatCurrency } from '../../../shared/lib';
 import { CATEGORY_DEFINITIONS, CategoryDefinition } from './ingredientCategories';
 import { IngredientCategoryPills } from './IngredientCategoryPills';
 import { IngredientTable } from './IngredientTable';
@@ -13,6 +13,7 @@ interface IngredientManagerProps {
   ingredients: Ingredient[];
   onSaveIngredient: (ingredient: Ingredient) => void;
   onDeleteIngredient: (id: string) => void;
+  onUpdateStock?: (id: string, newStock: number) => void;
   business: BusinessProfile;
 }
 
@@ -20,6 +21,7 @@ export const IngredientManager: React.FC<IngredientManagerProps> = ({
   ingredients,
   onSaveIngredient,
   onDeleteIngredient,
+  onUpdateStock,
   business,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,6 +29,23 @@ export const IngredientManager: React.FC<IngredientManagerProps> = ({
   const [viewMode, setViewMode] = useState<'grouped' | 'list'>('grouped');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null);
+
+  const lowStockCount = useMemo(() => {
+    return ingredients.filter(StockService.isLowStock).length;
+  }, [ingredients]);
+
+  const totalInventoryValue = useMemo(() => {
+    return (
+      Math.round(
+        ingredients.reduce((acc, ing) => {
+          const stock = ing.currentStock ?? 0;
+          const pkgQty = ing.purchasePackageQuantity > 0 ? ing.purchasePackageQuantity : 1;
+          const unitCost = ing.purchaseCost / pkgQty;
+          return acc + stock * unitCost;
+        }, 0) * 100
+      ) / 100
+    );
+  }, [ingredients]);
 
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { todos: ingredients.length };
@@ -73,7 +92,7 @@ export const IngredientManager: React.FC<IngredientManagerProps> = ({
             Catálogo de Insumos y Materias Primas
           </h2>
           <p className="text-xs sm:text-sm text-stone-500">
-            Organiza tus insumos agrupados por categorías y calcula automáticamente el costo unitario de compra.
+            Control de inventario, conteo físico rápido y alertas de stock mínimo para repostería.
           </p>
         </div>
 
@@ -87,6 +106,68 @@ export const IngredientManager: React.FC<IngredientManagerProps> = ({
           <Plus className="w-4 h-4 text-dulcinea-copper" />
           <span>Nuevo Insumo</span>
         </button>
+      </div>
+
+      {/* Inventory Health & Summary KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+        <div className="bg-white p-4 rounded-2xl border border-dulcinea-copper/25 shadow-xs flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider block">
+              Insumos en Catálogo
+            </span>
+            <span className="text-xl font-bold font-serif text-dulcinea-midnight">
+              {ingredients.length} variedades
+            </span>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-dulcinea-cream flex items-center justify-center text-dulcinea-copper">
+            <Boxes className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div className="bg-white p-4 rounded-2xl border border-dulcinea-copper/25 shadow-xs flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider block">
+              Alertas de Stock Mínimo
+            </span>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span
+                className={`text-xl font-bold font-mono ${
+                  lowStockCount > 0 ? 'text-dulcinea-cherry' : 'text-emerald-700'
+                }`}
+              >
+                {lowStockCount} {lowStockCount === 1 ? 'crítico' : 'críticos'}
+              </span>
+              {lowStockCount > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-dulcinea-cherry/15 text-dulcinea-cherry">
+                  Reabastecer
+                </span>
+              )}
+            </div>
+          </div>
+          <div
+            className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+              lowStockCount > 0
+                ? 'bg-dulcinea-cherry/10 text-dulcinea-cherry'
+                : 'bg-emerald-50 text-emerald-600'
+            }`}
+          >
+            <AlertTriangle className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div className="bg-white p-4 rounded-2xl border border-dulcinea-copper/25 shadow-xs flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider block">
+              Valor Total en Almacén
+            </span>
+            <span className="text-xl font-bold font-mono text-dulcinea-midnight">
+              {formatCurrency(totalInventoryValue, business.currencySymbol)}
+            </span>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
+            <DollarSign className="w-5 h-5" />
+          </div>
+        </div>
       </div>
 
       <div className="bg-white p-4 rounded-2xl border border-dulcinea-copper/25 shadow-sm space-y-3">
@@ -148,6 +229,7 @@ export const IngredientManager: React.FC<IngredientManagerProps> = ({
           setIsModalOpen(true);
         }}
         onDelete={onDeleteIngredient}
+        onUpdateStock={onUpdateStock}
         onResetFilters={() => {
           setSelectedCategoryFilter('todos');
           setSearchTerm('');

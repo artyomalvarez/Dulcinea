@@ -157,24 +157,30 @@ export const ProductList: React.FC<ProductListProps> = ({
                       </h3>
                     </div>
 
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <button
                         onClick={() => onEditProduct(product)}
                         title="Editar receta"
-                        className="p-1.5 text-stone-400 hover:text-dulcinea-midnight hover:bg-dulcinea-cream/70 rounded-xl transition-all active:scale-95 cursor-pointer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-dulcinea-blue hover:text-dulcinea-midnight bg-dulcinea-blue-soft/60 hover:bg-dulcinea-blue-soft rounded-lg text-[11px] font-bold transition-all active:scale-95 cursor-pointer"
                       >
-                        <Edit2 className="w-4 h-4" />
+                        <Edit2 className="w-3.5 h-3.5" />
+                        <span>Editar receta</span>
                       </button>
                       <button
                         onClick={() => {
-                          if (window.confirm(`¿Deseas eliminar "${product.name}"?`)) {
+                          if (
+                            window.confirm(
+                              `¿Deseas eliminar la receta "${product.name}"?\n\nLos registros históricos de producción y ventas no se perderán.`
+                            )
+                          ) {
                             onDeleteProduct(product.id);
                           }
                         }}
-                        title="Eliminar producto"
-                        className="p-1.5 text-stone-400 hover:text-dulcinea-cherry hover:bg-dulcinea-cherry/10 rounded-xl transition-all active:scale-95 cursor-pointer"
+                        title="Eliminar receta"
+                        className="inline-flex items-center gap-1 px-2 py-1.5 text-stone-500 hover:text-dulcinea-cherry hover:bg-dulcinea-cherry/10 rounded-lg text-[11px] font-semibold transition-all active:scale-95 cursor-pointer"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Eliminar</span>
                       </button>
                     </div>
                   </div>

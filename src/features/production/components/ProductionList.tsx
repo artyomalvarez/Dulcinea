@@ -335,26 +335,76 @@ export const ProductionList: React.FC<ProductionListProps> = ({
   onCloseModal,
   onOpenNewModal,
 }) => {
+  const activeBatchesCount = batches.filter(
+    (b) => (b.totalUnitsProduced || 0) > (b.unitsSold || 0)
+  ).length;
+  const totalProduced = batches.reduce((acc, b) => acc + (b.totalUnitsProduced || 0), 0);
+  const totalAvailable = batches.reduce(
+    (acc, b) => acc + Math.max(0, (b.totalUnitsProduced || 0) - (b.unitsSold || 0)),
+    0
+  );
+  const totalProductionCost =
+    Math.round(batches.reduce((acc, b) => acc + (b.totalSuppliesCost || 0), 0) * 100) / 100;
+
   return (
     <div className="space-y-5">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-dulcinea-copper/25 shadow-sm">
         <div>
           <h2 className="text-lg sm:text-xl font-bold text-dulcinea-midnight font-serif">
-            Historial de Lotes Horneados
+            Producción y Lotes Horneados
           </h2>
-          <p className="text-xs text-stone-500 mt-0.5">
-            Registra tus horneadas, controla el stock disponible por tanda y calcula el costo real por unidad.
+          <p className="text-xs text-dulcinea-muted mt-0.5">
+            Controla los lotes elaborados, las unidades disponibles en vitrina y el costo real de cada tanda.
           </p>
         </div>
 
         <button
           onClick={onOpenNewModal}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-dulcinea-midnight hover:bg-[#142433] text-dulcinea-cream font-bold text-xs sm:text-sm shadow-sm transition-all duration-150 active:scale-95 cursor-pointer shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-dulcinea-midnight hover:bg-[#142433] text-dulcinea-cream font-bold text-xs sm:text-sm shadow-sm transition-all duration-150 active:scale-95 cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4 text-dulcinea-copper" />
-          <span>Elaborar Nuevo Lote</span>
+          <span>+ Nuevo lote</span>
         </button>
+      </div>
+
+      {/* Operational KPI Bar */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-2xs">
+          <span className="text-[11px] font-bold text-dulcinea-muted uppercase tracking-wider block">
+            Lotes Activos
+          </span>
+          <span className="text-xl font-bold font-mono text-dulcinea-midnight mt-1 block">
+            {activeBatchesCount} de {batches.length}
+          </span>
+        </div>
+
+        <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-2xs">
+          <span className="text-[11px] font-bold text-dulcinea-muted uppercase tracking-wider block">
+            Unidades Producidas
+          </span>
+          <span className="text-xl font-bold font-mono text-dulcinea-midnight mt-1 block">
+            {totalProduced} u
+          </span>
+        </div>
+
+        <div className="bg-white p-4 rounded-xl border border-emerald-200 shadow-2xs">
+          <span className="text-[11px] font-bold text-dulcinea-success uppercase tracking-wider block">
+            Unidades Disponibles
+          </span>
+          <span className="text-xl font-bold font-mono text-dulcinea-success mt-1 block">
+            {totalAvailable} u
+          </span>
+        </div>
+
+        <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-2xs">
+          <span className="text-[11px] font-bold text-dulcinea-muted uppercase tracking-wider block">
+            Costo de Producción
+          </span>
+          <span className="text-xl font-bold font-mono text-dulcinea-midnight mt-1 block">
+            {formatCurrency(totalProductionCost, business.currencySymbol)}
+          </span>
+        </div>
       </div>
 
       {/* Batches Table */}

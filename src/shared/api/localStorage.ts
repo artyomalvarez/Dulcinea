@@ -6,12 +6,14 @@ import {
   Sale,
   Invoice,
   BusinessProfile,
+  WasteRecord,
   IngredientSchema,
   ProductSchema,
   ProductionBatchSchema,
   SaleSchema,
   InvoiceSchema,
   BusinessProfileSchema,
+  WasteRecordSchema,
   BackupPayloadSchema,
 } from '../../entities';
 import {
@@ -21,6 +23,7 @@ import {
   INITIAL_SALES,
   INITIAL_INVOICES,
   INITIAL_BUSINESS_PROFILE,
+  INITIAL_WASTES,
 } from './initialData';
 
 // Claves de localStorage
@@ -31,6 +34,7 @@ export const KEYS = {
   SALES: 'dulcecosto_sales_v2',
   INVOICES: 'dulcecosto_invoices_v1',
   BUSINESS: 'dulcecosto_business_v1',
+  WASTES: 'dulcecosto_wastes_v1',
 };
 
 export const STORAGE_KEYS = KEYS;
@@ -93,6 +97,14 @@ export class LocalStorageAdapter {
     localStorage.setItem(KEYS.INVOICES, JSON.stringify(invoices));
   }
 
+  getWastes(): WasteRecord[] {
+    return parseStoredWithSchema(KEYS.WASTES, z.array(WasteRecordSchema), INITIAL_WASTES);
+  }
+
+  saveWastes(wastes: WasteRecord[]): void {
+    localStorage.setItem(KEYS.WASTES, JSON.stringify(wastes));
+  }
+
   getBusinessProfile(): BusinessProfile {
     const parsed = parseStoredWithSchema(
       KEYS.BUSINESS,
@@ -136,6 +148,7 @@ export class LocalStorageAdapter {
       batches: this.getBatches(),
       sales: this.getSales(),
       invoices: this.getInvoices(),
+      wastes: this.getWastes(),
     };
     return JSON.stringify(backup, null, 2);
   }
@@ -156,6 +169,7 @@ export class LocalStorageAdapter {
       if (data.batches) this.saveBatches(data.batches);
       if (data.sales) this.saveSales(data.sales);
       if (data.invoices) this.saveInvoices(data.invoices);
+      if (data.wastes) this.saveWastes(data.wastes);
       return true;
     } catch (err) {
       console.error('Error importing backup:', err);
@@ -170,6 +184,7 @@ export class LocalStorageAdapter {
     this.saveSales(INITIAL_SALES);
     this.saveInvoices(INITIAL_INVOICES);
     this.saveBusinessProfile(INITIAL_BUSINESS_PROFILE);
+    this.saveWastes(INITIAL_WASTES);
   }
 }
 

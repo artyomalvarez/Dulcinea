@@ -1,4 +1,4 @@
-import { BusinessProfile, Ingredient, Invoice, Product, ProductionBatch, Sale } from "../../entities";
+import { BusinessProfile, Ingredient, Invoice, Product, ProductionBatch, Sale, WasteRecord } from "../../entities";
 
 export const INITIAL_BUSINESS_PROFILE: BusinessProfile = {
   businessName: 'Dulcinea - Taller de Repostería',
@@ -770,5 +770,34 @@ export const INITIAL_INVOICES: Invoice[] = [
     status: 'Pagada',
     notes: 'Suministro semanal de postres y pasteles finos.',
     saleId: 'sale-002',
+  },
+];
+
+export const INITIAL_WASTES: WasteRecord[] = [
+  {
+    id: 'waste-1',
+    date: '2026-06-18',
+    type: 'producto_danado',
+    itemId: 'prod-003',
+    itemName: 'Galletas de Mantequilla y Vainilla',
+    quantity: 4,
+    unit: 'galletas',
+    directCostLost: 12.8,
+    potentialRevenueLost: 32.0,
+    reason: 'quemado',
+    notes: 'Exceso de tiempo en el horno superior.',
+  },
+  {
+    id: 'waste-2',
+    date: '2026-06-21',
+    type: 'insumo_vencido',
+    itemId: 'ing-10',
+    itemName: 'Crema para Batir 35% Grasa',
+    quantity: 250,
+    unit: 'ml',
+    directCostLost: 24.5,
+    potentialRevenueLost: 0,
+    reason: 'derrame_accidente',
+    notes: 'Envase dañado al manipular en frío.',
   },
 ];

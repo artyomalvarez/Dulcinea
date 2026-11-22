@@ -181,6 +181,32 @@ export const BusinessProfileSchema = z.object({
   invoiceFooterMessage: z.string(),
 });
 
+export const WasteTypeSchema = z.enum(['producto_danado', 'insumo_vencido', 'merma_proceso']);
+
+export const WasteReasonSchema = z.enum([
+  'quemado',
+  'roto_deforme',
+  'caducado',
+  'derrame_accidente',
+  'error_pesaje',
+  'merma_horneado',
+  'otro',
+]);
+
+export const WasteRecordSchema = z.object({
+  id: z.string().min(1),
+  date: z.string().min(1),
+  type: WasteTypeSchema,
+  itemId: z.string().optional(),
+  itemName: z.string().min(1),
+  quantity: z.number().positive(),
+  unit: z.string().min(1),
+  directCostLost: z.number().min(0),
+  potentialRevenueLost: z.number().min(0),
+  reason: WasteReasonSchema,
+  notes: z.string().optional(),
+});
+
 export const BackupPayloadSchema = z.object({
   version: z.string().optional(),
   exportedAt: z.string().optional(),
@@ -190,4 +216,5 @@ export const BackupPayloadSchema = z.object({
   batches: z.array(ProductionBatchSchema).optional(),
   sales: z.array(SaleSchema).optional(),
   invoices: z.array(InvoiceSchema).optional(),
+  wastes: z.array(WasteRecordSchema).optional(),
 });

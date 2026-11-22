@@ -1,144 +1,135 @@
 import React from 'react';
 import {
-  Croissant,
-  CakeSlice,
-  ChefHat,
-  Receipt,
+  Bell,
   Settings,
-  DatabaseBackup
+  DatabaseBackup,
+  ChefHat,
+  AlertTriangle
 } from 'lucide-react';
 import { BusinessProfile } from '../entities';
 
-export type ActiveTab = 'dashboard' | 'catalog' | 'workshop' | 'admin';
+export type ActiveTab =
+  | 'dashboard'
+  | 'products'
+  | 'inventory'
+  | 'production'
+  | 'sales'
+  | 'finances'
+  | 'invoicing';
+
+const SECTION_META: Record<ActiveTab, { title: string; subtitle: string }> = {
+  dashboard: {
+    title: 'Inicio del Taller',
+    subtitle: 'Resumen operativo, existencias del día y rentabilidad',
+  },
+  products: {
+    title: 'Productos y Recetas',
+    subtitle: 'Catálogo de fórmulas, costos por porción y precios de venta',
+  },
+  inventory: {
+    title: 'Inventario de Materias Primas',
+    subtitle: 'Existencias actuales, reposición de stock y movimientos',
+  },
+  production: {
+    title: 'Producción y Lotes',
+    subtitle: 'Control de horneadas, disponibilidad en vitrina e historial',
+  },
+  sales: {
+    title: 'Ventas y Pedidos',
+    subtitle: 'Registro rápido de entregas, ticket promedio e ingresos',
+  },
+  finances: {
+    title: 'Finanzas, Costos y Mermas',
+    subtitle: 'Análisis de rentabilidad, simulador de costeo y pérdidas',
+  },
+  invoicing: {
+    title: 'Facturación',
+    subtitle: 'Comprobantes fiscales, estados de cobro e impresión PDF',
+  },
+};
 
 interface HeaderProps {
   activeTab: ActiveTab;
-  setActiveTab: (tab: ActiveTab) => void;
   business: BusinessProfile;
+  lowStockCount?: number;
+  onNavigateToInventory?: () => void;
   onOpenSettings: () => void;
   onOpenBackup: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   activeTab,
-  setActiveTab,
   business,
+  lowStockCount = 0,
+  onNavigateToInventory,
   onOpenSettings,
   onOpenBackup,
 }) => {
-  const navItems: { id: ActiveTab; label: string; subtitle: string; icon: React.ReactNode }[] = [
-    {
-      id: 'dashboard',
-      label: 'Inicio',
-      subtitle: 'Resumen y métricas',
-      icon: <CakeSlice className="w-4 h-4" />,
-    },
-    {
-      id: 'catalog',
-      label: 'Mi Catálogo',
-      subtitle: 'Recetas e Insumos',
-      icon: <Croissant className="w-4 h-4" />,
-    },
-    {
-      id: 'workshop',
-      label: 'Mi Taller',
-      subtitle: 'Producción y Ventas',
-      icon: <ChefHat className="w-4 h-4" />,
-    },
-    {
-      id: 'admin',
-      label: 'Administración',
-      subtitle: 'Facturación y Reportes',
-      icon: <Receipt className="w-4 h-4" />,
-    },
-  ];
-
+  const meta = SECTION_META[activeTab];
   const displayName = (business.businessName || 'Dulcinea')
     .replace(/Dulce Canela/gi, 'Dulcinea')
     .replace(/DulceCosto/gi, 'Dulcinea');
 
   return (
-    <header className="bg-dulcinea-midnight text-white border-b border-[#142433] shadow-md sticky top-0 z-30 no-print">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          {/* Logo & Brand Name */}
-          <div className="flex items-center space-x-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-[#142433] border border-dulcinea-copper/50 flex items-center justify-center text-dulcinea-cream shadow-md">
-              <ChefHat className="w-6 h-6 text-dulcinea-copper" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-xl sm:text-2xl font-bold text-dulcinea-cream! tracking-tight flex items-center gap-1.5 font-serif">
-                  {displayName}
-                </h1>
-                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#142433] text-dulcinea-copper border border-dulcinea-copper/35">
-                  {business.currencySymbol} {business.currencyCode}
-                </span>
-              </div>
-              <p className="text-xs text-slate-300 line-clamp-1">
-                {business.tagline || 'Repostería artesanal, costeo de recetas y gestión de taller'}
-              </p>
-            </div>
+    <header className="bg-white/95 backdrop-blur-xs border-b border-dulcinea-copper/25 sticky top-0 z-20 no-print">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+        {/* Left: Current section context */}
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="md:hidden w-9 h-9 rounded-xl bg-dulcinea-midnight flex items-center justify-center shrink-0">
+            <ChefHat className="w-5 h-5 text-dulcinea-copper" />
           </div>
-
-          {/* Quick Actions */}
-          <div className="flex items-center gap-2 self-end md:self-auto">
-            <button
-              onClick={onOpenBackup}
-              title="Respaldar o Restaurar Datos"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl border border-white/15 text-xs font-semibold text-dulcinea-cream bg-white/5 hover:bg-white/10 hover:border-dulcinea-copper/40 transition-all duration-150 active:scale-95 cursor-pointer"
-            >
-              <DatabaseBackup className="w-3.5 h-3.5 text-dulcinea-copper" />
-              <span>Respaldo</span>
-            </button>
-
-            <button
-              onClick={onOpenSettings}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-dulcinea-copper hover:bg-[#c88a58] text-dulcinea-midnight text-xs font-bold transition-all duration-150 active:scale-95 cursor-pointer shadow-sm"
-            >
-              <Settings className="w-3.5 h-3.5 text-dulcinea-midnight" />
-              <span>Ajustes</span>
-            </button>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-bold text-dulcinea-midnight font-serif truncate">
+                {meta.title}
+              </h2>
+              <span className="hidden lg:inline-block text-[11px] font-bold px-2 py-0.5 rounded-full bg-dulcinea-cream text-dulcinea-midnight border border-dulcinea-copper/30">
+                {displayName} · {business.currencySymbol} {business.currencyCode}
+              </span>
+            </div>
+            <p className="text-xs text-dulcinea-muted truncate">{meta.subtitle}</p>
           </div>
         </div>
 
-        {/* 4-Section Navigation Bar */}
-        <nav className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3.5 pt-2.5 border-t border-white/10">
-          {navItems.map((item) => {
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={`flex items-center gap-2.5 px-4 py-2.5 rounded-2xl text-left transition-all duration-150 active:scale-95 cursor-pointer border ${
-                  isActive
-                    ? 'bg-white/15 text-white border-dulcinea-copper shadow-sm'
-                    : 'bg-white/5 text-slate-300 border-transparent hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                <div
-                  className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                    isActive ? 'bg-dulcinea-copper text-dulcinea-midnight' : 'bg-white/10 text-dulcinea-copper'
-                  }`}
-                >
-                  {item.icon}
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xs sm:text-sm font-bold leading-tight truncate">
-                    {item.label}
-                  </div>
-                  <div
-                    className={`text-[10px] truncate hidden sm:block ${
-                      isActive ? 'text-dulcinea-cream' : 'text-slate-400'
-                    }`}
-                  >
-                    {item.subtitle}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </nav>
+        {/* Right: Notifications, Backup & Settings */}
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          {lowStockCount > 0 && onNavigateToInventory ? (
+            <button
+              onClick={onNavigateToInventory}
+              title="Ver insumos por debajo del stock mínimo"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-dulcinea-cherry/10 text-dulcinea-cherry border border-dulcinea-cherry/25 text-xs font-bold hover:bg-dulcinea-cherry/15 transition-colors cursor-pointer"
+            >
+              <AlertTriangle className="w-3.5 h-3.5" />
+              <span>{lowStockCount} alerta{lowStockCount > 1 ? 's' : ''}</span>
+            </button>
+          ) : (
+            <span
+              title="Inventario al día"
+              className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-dulcinea-success border border-emerald-200 text-xs font-semibold"
+            >
+              <Bell className="w-3.5 h-3.5" />
+              <span>Stock al día</span>
+            </span>
+          )}
+
+          <button
+            onClick={onOpenBackup}
+            title="Respaldar o Restaurar Datos"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-stone-200 text-xs font-semibold text-dulcinea-text bg-white hover:bg-dulcinea-cream/40 hover:border-dulcinea-copper/40 transition-all active:scale-95 cursor-pointer"
+          >
+            <DatabaseBackup className="w-3.5 h-3.5 text-dulcinea-blue" />
+            <span className="hidden sm:inline">Respaldo</span>
+          </button>
+
+          <button
+            onClick={onOpenSettings}
+            title="Ajustes del Negocio"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-dulcinea-midnight hover:bg-[#142433] text-dulcinea-cream text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-2xs"
+          >
+            <Settings className="w-3.5 h-3.5 text-dulcinea-copper" />
+            <span>Ajustes</span>
+          </button>
+        </div>
       </div>
     </header>
   );

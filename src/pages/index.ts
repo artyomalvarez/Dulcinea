@@ -1,4 +1,3 @@
 export * from './DashboardPage';
-export * from './CatalogPage';
-export * from './WorkshopPage';
-export * from './AdminPage';
+export * from './InventoryPage';
+export * from './FinancesPage';

@@ -12,27 +12,33 @@ import {
   Product,
   ProductionBatch,
   Sale,
+  WasteRecord,
 } from '../entities';
 import { useAppStore } from '../shared/store/useAppStore';
+import { StockService } from '../shared/lib';
 import { Header, ActiveTab } from '../widgets/Header';
+import { Sidebar } from '../widgets/Sidebar';
 import { SettingsModal } from '../widgets/SettingsModal';
+import { ProductList } from '../features/products/components/ProductList';
 import { ProductFormModal } from '../features/products/components/ProductFormModal';
-import { ProductionBatchModal } from '../features/production/components/ProductionList';
-import { SaleFormModal } from '../features/sales/components/SaleFormModal';
+import { ProductionList, ProductionBatchModal } from '../features/production/components/ProductionList';
+import { SalesList, SaleFormModal } from '../features/sales/components/SalesList';
+import { InvoiceList } from '../features/invoices/components/InvoiceList';
 import { InvoiceModal } from '../features/invoices/components/InvoiceModal';
 import { InvoiceViewer } from '../features/invoices/components/InvoiceViewer';
 import { ProfitabilityCalculatorModal } from '../features/profitability/components/ProfitabilityCalculatorModal';
+import { LossSimulatorModal } from '../features/loss-simulator/components/LossSimulatorModal';
 import {
   DashboardPage,
-  CatalogPage,
-  WorkshopPage,
-  AdminPage,
+  InventoryPage,
+  FinancesPage,
 } from '../pages';
 
 export default function App() {
   // Navigation
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
-  const [catalogSubTab, setCatalogSubTab] = useState<'recipes' | 'ingredients'>('recipes');
+  const [inventorySubTab, setInventorySubTab] = useState<'existencias' | 'reposicion' | 'movimientos'>('existencias');
+  const [financesSubTab, setFinancesSubTab] = useState<'rentabilidad' | 'costos' | 'mermas'>('rentabilidad');
 
   // Global Zustand Store
   const {
@@ -42,10 +48,12 @@ export default function App() {
     batches,
     sales,
     invoices,
+    wastes,
     saveProduct,
     deleteProduct,
     saveIngredient,
     deleteIngredient,
+    updateIngredientStock,
     saveBatch,
     deleteBatch,
     saveSale,
@@ -53,6 +61,8 @@ export default function App() {
     saveInvoice,
     deleteInvoice,
     updateInvoiceStatus,
+    saveWaste,
+    deleteWaste,
     saveBusiness,
   } = useAppStore();
 
@@ -76,6 +86,7 @@ export default function App() {
   const [settingsInitialTab, setSettingsInitialTab] = useState<'settings' | 'backup'>('settings');
 
   const [isCalculatorModalOpen, setIsCalculatorModalOpen] = useState(false);
+  const [isLossSimulatorOpen, setIsLossSimulatorOpen] = useState(false);
 
   const handleSaveProduct = (prod: Product) => {
     saveProduct(prod);
@@ -95,6 +106,11 @@ export default function App() {
   const handleDeleteIngredient = (id: string) => {
     deleteIngredient(id);
     toast.info('Insumo eliminado.');
+  };
+
+  const handleUpdateIngredientStock = (id: string, newStock: number) => {
+    updateIngredientStock(id, newStock);
+    toast.success('Stock de inventario actualizado.');
   };
 
   const handleSaveBatch = (batch: ProductionBatch) => {
@@ -135,17 +151,30 @@ export default function App() {
     toast.success(`Estado actualizado a "${status}".`);
   };
 
+  const handleSaveWaste = (waste: WasteRecord) => {
+    saveWaste(waste);
+    toast.success(`Merma de "${waste.itemName}" registrada.`);
+  };
+
+  const handleDeleteWaste = (id: string) => {
+    deleteWaste(id);
+    toast.info('Registro de merma eliminado.');
+  };
+
   const handleSaveBusiness = (updated: BusinessProfile) => {
     saveBusiness(updated);
     toast.success('Configuración del negocio actualizada.');
   };
 
+  const lowStockCount = StockService.buildShoppingList(ingredients).items.length;
+
   return (
-    <div className="min-h-screen bg-dulcinea-dots text-dulcinea-midnight flex flex-col font-sans selection:bg-dulcinea-copper/30 selection:text-dulcinea-midnight">
-      <Header
+    <div className="min-h-screen bg-dulcinea-dots text-dulcinea-text flex flex-col font-sans selection:bg-dulcinea-copper/30 selection:text-dulcinea-midnight">
+      <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         business={business}
+        lowStockCount={lowStockCount}
         onOpenSettings={() => {
           setSettingsInitialTab('settings');
           setIsSettingsOpen(true);
@@ -156,134 +185,173 @@ export default function App() {
         }}
       />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12">
-        {activeTab === 'dashboard' && (
-          <DashboardPage
-            products={products}
-            batches={batches}
-            sales={sales}
-            ingredients={ingredients}
-            business={business}
-            onOpenSaleModal={() => {
-              setPreselectedProductForSale(null);
-              setIsSaleModalOpen(true);
-            }}
-            onOpenBatchModal={() => {
-              setPreselectedProductForBatch(null);
-              setIsBatchModalOpen(true);
-            }}
-            onNavigateToIngredients={() => {
-              setCatalogSubTab('ingredients');
-              setActiveTab('catalog');
-            }}
-            onNavigateToCatalog={() => {
-              setCatalogSubTab('recipes');
-              setActiveTab('catalog');
-            }}
-            onNavigateToWorkshop={() => {
-              setActiveTab('workshop');
-            }}
-            onOpenCalculator={() => setIsCalculatorModalOpen(true)}
-          />
-        )}
+      <div className="flex-1 flex flex-col md:pl-64 min-w-0">
+        <Header
+          activeTab={activeTab}
+          business={business}
+          lowStockCount={lowStockCount}
+          onNavigateToInventory={() => {
+            setInventorySubTab('reposicion');
+            setActiveTab('inventory');
+          }}
+          onOpenSettings={() => {
+            setSettingsInitialTab('settings');
+            setIsSettingsOpen(true);
+          }}
+          onOpenBackup={() => {
+            setSettingsInitialTab('backup');
+            setIsSettingsOpen(true);
+          }}
+        />
 
-        {activeTab === 'catalog' && (
-          <CatalogPage
-            products={products}
-            ingredients={ingredients}
-            business={business}
-            initialSubTab={catalogSubTab}
-            onOpenCreateProduct={() => {
-              setEditingProduct(null);
-              setIsProductModalOpen(true);
-            }}
-            onEditProduct={(product) => {
-              setEditingProduct(product);
-              setIsProductModalOpen(true);
-            }}
-            onDeleteProduct={handleDeleteProduct}
-            onMakeBatch={(product) => {
-              setPreselectedProductForBatch(product);
-              setIsBatchModalOpen(true);
-            }}
-            onSaveIngredient={handleSaveIngredient}
-            onDeleteIngredient={handleDeleteIngredient}
-            onOpenCalculator={() => setIsCalculatorModalOpen(true)}
-          />
-        )}
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12">
+          {activeTab === 'dashboard' && (
+            <DashboardPage
+              products={products}
+              batches={batches}
+              sales={sales}
+              ingredients={ingredients}
+              wastes={wastes}
+              business={business}
+              onOpenSaleModal={() => {
+                setPreselectedProductForSale(null);
+                setIsSaleModalOpen(true);
+              }}
+              onOpenBatchModal={() => {
+                setPreselectedProductForBatch(null);
+                setIsBatchModalOpen(true);
+              }}
+              onNavigateToIngredients={() => {
+                setInventorySubTab('reposicion');
+                setActiveTab('inventory');
+              }}
+              onNavigateToCatalog={() => {
+                setActiveTab('products');
+              }}
+              onNavigateToWorkshop={() => {
+                setActiveTab('production');
+              }}
+              onOpenCalculator={() => {
+                setFinancesSubTab('costos');
+                setActiveTab('finances');
+              }}
+              onOpenLossSimulator={() => setIsLossSimulatorOpen(true)}
+            />
+          )}
 
-        {activeTab === 'workshop' && (
-          <WorkshopPage
-            products={products}
-            batches={batches}
-            sales={sales}
-            business={business}
-            onSaveBatch={handleSaveBatch}
-            onDeleteBatch={handleDeleteBatch}
-            isOpenBatchModal={isBatchModalOpen}
-            onCloseBatchModal={() => {
-              setIsBatchModalOpen(false);
-              setPreselectedProductForBatch(null);
-            }}
-            onOpenNewBatchModal={() => {
-              setPreselectedProductForBatch(null);
-              setIsBatchModalOpen(true);
-            }}
-            preselectedProductForBatch={preselectedProductForBatch}
-            onSaveSale={handleSaveSale}
-            onDeleteSale={handleDeleteSale}
-            onGenerateInvoiceFromSale={(sale) => {
-              setSaleForInvoice(sale);
-              setIsInvoiceModalOpen(true);
-            }}
-            isOpenSaleModal={isSaleModalOpen}
-            onCloseSaleModal={() => {
-              setIsSaleModalOpen(false);
-              setPreselectedProductForSale(null);
-            }}
-            onOpenNewSaleModal={() => {
-              setPreselectedProductForSale(null);
-              setIsSaleModalOpen(true);
-            }}
-            preselectedProductForSale={preselectedProductForSale}
-          />
-        )}
+          {activeTab === 'products' && (
+            <ProductList
+              products={products}
+              onOpenCreateModal={() => {
+                setEditingProduct(null);
+                setIsProductModalOpen(true);
+              }}
+              onEditProduct={(product) => {
+                setEditingProduct(product);
+                setIsProductModalOpen(true);
+              }}
+              onDeleteProduct={handleDeleteProduct}
+              onMakeBatch={(product) => {
+                setPreselectedProductForBatch(product);
+                setIsBatchModalOpen(true);
+              }}
+              business={business}
+            />
+          )}
 
-        {activeTab === 'admin' && (
-          <AdminPage
-            invoices={invoices}
-            products={products}
-            batches={batches}
-            sales={sales}
-            business={business}
-            onOpenCreateInvoice={() => {
-              setSaleForInvoice(null);
-              setIsInvoiceModalOpen(true);
-            }}
-            onViewInvoice={(inv) => {
-              setViewingInvoice(inv);
-              setIsViewerOpen(true);
-            }}
-            onDeleteInvoice={handleDeleteInvoice}
-            onUpdateInvoiceStatus={handleUpdateInvoiceStatus}
-            onOpenSettings={() => {
-              setSettingsInitialTab('settings');
-              setIsSettingsOpen(true);
-            }}
-          />
-        )}
-      </main>
+          {activeTab === 'inventory' && (
+            <InventoryPage
+              ingredients={ingredients}
+              batches={batches}
+              wastes={wastes}
+              business={business}
+              initialSubTab={inventorySubTab}
+              onSaveIngredient={handleSaveIngredient}
+              onDeleteIngredient={handleDeleteIngredient}
+              onUpdateIngredientStock={handleUpdateIngredientStock}
+              onOpenLossSimulator={() => setIsLossSimulatorOpen(true)}
+            />
+          )}
 
-      <footer className="bg-white/90 backdrop-blur-xs border-t border-dulcinea-copper/25 py-4 text-center text-xs text-stone-500 no-print">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span className="font-semibold text-dulcinea-midnight font-serif">
-            {business.businessName || 'Dulcinea'} &bull; Taller de Repostería Artesanal
-          </span>
-          <span className="font-mono text-[11px] text-stone-500 bg-dulcinea-cream/50 px-3 py-1 rounded-full border border-dulcinea-copper/20">
-            Costo Unitario = Insumos ÷ Rendimiento | Utilidad = Venta - Costo
-          </span>
-        </div>
-      </footer>
+          {activeTab === 'production' && (
+            <ProductionList
+              batches={batches}
+              products={products}
+              business={business}
+              onSaveBatch={handleSaveBatch}
+              onDeleteBatch={handleDeleteBatch}
+              onOpenSaleModalForProduct={(product) => {
+                setPreselectedProductForSale(product);
+                setIsSaleModalOpen(true);
+              }}
+              onOpenNewModal={() => {
+                setPreselectedProductForBatch(null);
+                setIsBatchModalOpen(true);
+              }}
+            />
+          )}
+
+          {activeTab === 'sales' && (
+            <SalesList
+              sales={sales}
+              products={products}
+              batches={batches}
+              business={business}
+              onSaveSale={handleSaveSale}
+              onDeleteSale={handleDeleteSale}
+              onGenerateInvoiceFromSale={(sale) => {
+                setSaleForInvoice(sale);
+                setIsInvoiceModalOpen(true);
+              }}
+              onOpenNewModal={() => {
+                setPreselectedProductForSale(null);
+                setIsSaleModalOpen(true);
+              }}
+            />
+          )}
+
+          {activeTab === 'finances' && (
+            <FinancesPage
+              products={products}
+              batches={batches}
+              sales={sales}
+              wastes={wastes}
+              business={business}
+              initialSubTab={financesSubTab}
+              onOpenLossSimulator={() => setIsLossSimulatorOpen(true)}
+              onDeleteWaste={handleDeleteWaste}
+            />
+          )}
+
+          {activeTab === 'invoicing' && (
+            <InvoiceList
+              invoices={invoices}
+              business={business}
+              onOpenCreateModal={() => {
+                setSaleForInvoice(null);
+                setIsInvoiceModalOpen(true);
+              }}
+              onViewInvoice={(inv) => {
+                setViewingInvoice(inv);
+                setIsViewerOpen(true);
+              }}
+              onDeleteInvoice={handleDeleteInvoice}
+              onUpdateInvoiceStatus={handleUpdateInvoiceStatus}
+            />
+          )}
+        </main>
+
+        <footer className="bg-white/90 backdrop-blur-xs border-t border-dulcinea-copper/25 py-4 text-center text-xs text-stone-500 no-print">
+          <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <span className="font-semibold text-dulcinea-midnight font-serif">
+              {business.businessName || 'Dulcinea'} &bull; El control de tu taller, desde la receta hasta la ganancia
+            </span>
+            <span className="font-mono text-[11px] text-stone-500 bg-dulcinea-cream/50 px-3 py-1 rounded-full border border-dulcinea-copper/20">
+              Costo Unitario = Insumos ÷ Rendimiento | Utilidad = Venta - Costo
+            </span>
+          </div>
+        </footer>
+      </div>
 
       <ProductFormModal
         isOpen={isProductModalOpen}
@@ -348,11 +416,23 @@ export default function App() {
       {isCalculatorModalOpen && (
         <ProfitabilityCalculatorModal
           business={business}
+          products={products}
           isOpen={isCalculatorModalOpen}
           onClose={() => setIsCalculatorModalOpen(false)}
           isStandaloneTab={false}
         />
       )}
+
+      <LossSimulatorModal
+        isOpen={isLossSimulatorOpen}
+        onClose={() => setIsLossSimulatorOpen(false)}
+        products={products}
+        ingredients={ingredients}
+        wastes={wastes}
+        business={business}
+        onSaveWaste={handleSaveWaste}
+        onDeleteWaste={handleDeleteWaste}
+      />
 
       <SettingsModal
         isOpen={isSettingsOpen}

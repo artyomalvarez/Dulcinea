@@ -17,7 +17,7 @@ import {
   Info,
   FileText
 } from 'lucide-react';
-import { BusinessProfile, ProductionBatch, Sale } from '../../entities';
+import { BusinessProfile, ProductionBatch, Sale, WasteRecord } from '../../entities';
 import {
   formatCurrency,
   formatPercent,
@@ -28,6 +28,7 @@ import {
 interface MonthlyComparisonChartProps {
   sales: Sale[];
   batches: ProductionBatch[];
+  wastes?: WasteRecord[];
   business: BusinessProfile;
   onOpenReport?: () => void;
 }
@@ -37,16 +38,24 @@ type MonthlyDataPoint = MonthlyProfitabilityPoint;
 export const MonthlyComparisonChart: React.FC<MonthlyComparisonChartProps> = ({
   sales,
   batches,
+  wastes = [],
   business,
   onOpenReport,
 }) => {
   const [chartType, setChartType] = useState<'barras' | 'area'>('barras');
   const [costBasis, setCostBasis] = useState<'lotes' | 'ventas'>('lotes');
+  const [includeLosses, setIncludeLosses] = useState<boolean>(true);
 
   // Process and group monthly data via AnalyticsService
   const monthlyData: MonthlyDataPoint[] = useMemo(() => {
-    return AnalyticsService.groupMonthlyProfitability(sales, batches, costBasis, false);
-  }, [sales, batches, costBasis]);
+    return AnalyticsService.groupMonthlyProfitability(
+      sales,
+      batches,
+      costBasis,
+      false,
+      includeLosses ? wastes : []
+    );
+  }, [sales, batches, wastes, costBasis, includeLosses]);
 
   // Overall totals in the period
   const totalPeriodSales = monthlyData.reduce((acc, m) => acc + m.ventasTotales, 0);
@@ -104,6 +113,18 @@ export const MonthlyComparisonChart: React.FC<MonthlyComparisonChartProps> = ({
                 {formatCurrency(data.costosTotales, business.currencySymbol)}
               </span>
             </div>
+
+            {data.perdidasTotales > 0 && (
+              <div className="flex items-center justify-between text-dulcinea-cherry">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-dulcinea-cherry"></span>
+                  <span>Mermas / Pérdidas:</span>
+                </span>
+                <span className="font-mono font-bold">
+                  -{formatCurrency(data.perdidasTotales, business.currencySymbol)}
+                </span>
+              </div>
+            )}
 
             <div className="flex items-center justify-between pt-1 border-t border-gray-100">
               <span className="flex items-center gap-1.5 font-bold text-emerald-800">
@@ -192,6 +213,21 @@ export const MonthlyComparisonChart: React.FC<MonthlyComparisonChartProps> = ({
               Área
             </button>
           </div>
+
+          {/* Loss deduction toggle */}
+          {wastes.length > 0 && (
+            <button
+              onClick={() => setIncludeLosses(!includeLosses)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer border ${
+                includeLosses
+                  ? 'bg-dulcinea-cherry/10 text-dulcinea-cherry border-dulcinea-cherry/30'
+                  : 'bg-stone-100 text-stone-500 border-stone-200 line-through'
+              }`}
+              title="Activar/desactivar descuento de mermas y pérdidas del cálculo mensual"
+            >
+              <span>{includeLosses ? '⚠️ Mermas Restadas' : 'Ignorar Mermas'}</span>
+            </button>
+          )}
 
           {/* Download PDF Report button */}
           {onOpenReport && (

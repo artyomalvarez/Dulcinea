@@ -2,9 +2,16 @@
 
 @theme {
   --color-dulcinea-midnight: #1A2E40;
+  --color-dulcinea-blue: #397CA5;
+  --color-dulcinea-blue-soft: #E8F1F7;
   --color-dulcinea-cream: #F9E7D3;
+  --color-dulcinea-surface: #FFFFFF;
   --color-dulcinea-copper: #D4A373;
   --color-dulcinea-cherry: #C0392B;
+  --color-dulcinea-text: #263746;
+  --color-dulcinea-muted: #718096;
+  --color-dulcinea-success: #27845B;
+  --color-dulcinea-warning: #D99A32;
   --font-sans: 'Nunito', system-ui, -apple-system, sans-serif;
   --font-serif: 'Playfair Display', Georgia, serif;
 }
@@ -12,13 +19,18 @@
 @layer base {
   body {
     font-family: var(--font-sans);
-    color: #1A2E40;
+    color: var(--color-dulcinea-text);
     background-color: #FCF6EE;
   }
 
   h1, h2, h3, .font-serif {
     font-family: var(--font-serif);
     color: #1A2E40;
+  }
+
+  .font-mono,
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
   }
 }
 

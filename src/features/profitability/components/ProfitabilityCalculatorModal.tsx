@@ -2,9 +2,12 @@ import React, { useState } from 'react';
 import {
   Sparkles,
   Calculator,
-  RefreshCw
+  RefreshCw,
+  BookOpen,
+  Info,
+  Check
 } from 'lucide-react';
-import { BusinessProfile } from '../../../entities';
+import { BusinessProfile, Product } from '../../../entities';
 import {
   formatCurrency,
   formatPercent,
@@ -13,6 +16,7 @@ import {
 
 interface ProfitabilityCalculatorModalProps {
   business: BusinessProfile;
+  products?: Product[];
   isOpen?: boolean;
   onClose?: () => void;
   isStandaloneTab?: boolean;
@@ -20,19 +24,24 @@ interface ProfitabilityCalculatorModalProps {
 
 export const ProfitabilityCalculatorModal: React.FC<ProfitabilityCalculatorModalProps> = ({
   business,
+  products = [],
   isOpen = true,
   onClose,
   isStandaloneTab = false,
 }) => {
-  // Simulator inputs - Defaults to user's exact prompt example!
+  // Simulator inputs - Defaults to 3 batches of $25 each = $75
+  const [unitBatchCost, setUnitBatchCost] = useState<number>(25);
   const [totalSupplies, setTotalSupplies] = useState<number>(75);
   const [numberOfBatches, setNumberOfBatches] = useState<number>(3);
   const [unitsPerBatch, setUnitsPerBatch] = useState<number>(5);
   const [sellingPrice, setSellingPrice] = useState<number>(12);
   const [desiredMarginPercent, setDesiredMarginPercent] = useState<number>(55);
+  const [selectedRecipeId, setSelectedRecipeId] = useState<string>('');
 
   // Exact calculations via CostCalculator
-  const totalUnits = numberOfBatches * unitsPerBatch;
+  const safeBatches = Math.max(1, numberOfBatches || 1);
+  const safeUnitsPerBatch = Math.max(1, unitsPerBatch || 1);
+  const totalUnits = safeBatches * safeUnitsPerBatch;
   const {
     costPerUnit,
     profitPerUnit,
@@ -47,10 +56,18 @@ export const ProfitabilityCalculatorModal: React.FC<ProfitabilityCalculatorModal
     suggestedMarginPercent: desiredMarginPercent,
   });
 
+  const suggestedPriceForMargin = CostCalculator.calculateSuggestedPrice(
+    costPerUnit,
+    desiredMarginPercent
+  );
+  const priceDifference = Math.round((sellingPrice - suggestedPriceForMargin) * 100) / 100;
+
   const handleResetToUserExample = () => {
-    setTotalSupplies(75);
+    setSelectedRecipeId('');
+    setUnitBatchCost(25);
     setNumberOfBatches(3);
     setUnitsPerBatch(5);
+    setTotalSupplies(75);
     setSellingPrice(12);
     setDesiredMarginPercent(58);
   };
@@ -58,107 +75,166 @@ export const ProfitabilityCalculatorModal: React.FC<ProfitabilityCalculatorModal
   const content = (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-200/80">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-xs font-bold uppercase tracking-wider">
-              Simulador Didáctico
+            <span className="px-2.5 py-0.5 rounded-full bg-dulcinea-blue-soft text-dulcinea-blue text-xs font-bold uppercase tracking-wider">
+              Simulador Interactivo
             </span>
-            <span className="text-xs text-amber-700 font-semibold">Fórmulas Paso a Paso</span>
+            <span className="text-xs text-dulcinea-muted font-semibold">Fórmulas Paso a Paso</span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 font-serif mt-1">
+          <h2 className="text-xl sm:text-2xl font-bold text-dulcinea-midnight font-serif mt-1">
             Simulador de Costeo y Rentabilidad de Repostería
           </h2>
-          <p className="text-xs sm:text-sm text-gray-500">
-            Aprende exactamente cómo se calcula el costo por porción, tu margen de utilidad y cuántas unidades debes vender para recuperar tu inversión.
+          <p className="text-xs sm:text-sm text-dulcinea-muted">
+            Calcula cuánto cuesta producir cada unidad, compara tu precio actual con el sugerido y encuentra tu punto de equilibrio.
           </p>
         </div>
 
         <button
           onClick={handleResetToUserExample}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 text-xs font-semibold hover:bg-amber-100 transition-colors cursor-pointer self-start sm:self-auto"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-dulcinea-copper/40 bg-dulcinea-cream/50 text-dulcinea-midnight text-xs font-semibold hover:bg-dulcinea-cream transition-colors cursor-pointer self-start sm:self-auto"
         >
-          <RefreshCw className="w-3.5 h-3.5" />
-          <span>Cargar Ejemplo (75 ÷ 15 = 5)</span>
+          <RefreshCw className="w-3.5 h-3.5 text-dulcinea-copper" />
+          <span>Reiniciar Ejemplo (75 ÷ 15 = 5)</span>
         </button>
+      </div>
+
+      {/* Simulation Notice */}
+      <div className="bg-dulcinea-blue-soft/70 border border-dulcinea-blue/25 rounded-xl px-4 py-2.5 flex items-center gap-2.5 text-xs text-dulcinea-midnight">
+        <Info className="w-4 h-4 text-dulcinea-blue shrink-0" />
+        <span>
+          <strong>Modo Simulación:</strong> los cambios que pruebes aquí te ayudan a tomar decisiones, pero no alteran las recetas ni los precios guardados en <strong>Productos</strong>.
+        </span>
       </div>
 
       {/* Interactive Controls & Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Left: Inputs Column (5 cols) */}
-        <div className="lg:col-span-5 bg-white p-5 rounded-3xl border border-gray-200 shadow-xs space-y-4">
-          <h3 className="text-sm font-bold text-gray-900 font-serif flex items-center gap-2">
-            <Calculator className="w-4 h-4 text-amber-600" />
-            <span>Datos de Tu Horneada / Producción</span>
+        <div className="lg:col-span-5 bg-white p-5 rounded-2xl border border-stone-200 shadow-xs space-y-4">
+          <h3 className="text-sm font-bold text-dulcinea-midnight font-serif flex items-center gap-2">
+            <Calculator className="w-4 h-4 text-dulcinea-copper" />
+            <span>Paso 1. Configura tu Producción</span>
           </h3>
 
+          {products.length > 0 && (
+            <div className="bg-dulcinea-cream/40 p-3 rounded-xl border border-dulcinea-copper/30 space-y-1.5">
+              <label className="block text-xs font-bold text-dulcinea-midnight flex items-center gap-1.5">
+                <BookOpen className="w-3.5 h-3.5 text-dulcinea-copper" />
+                <span>Simular con una Receta de tu Catálogo</span>
+              </label>
+              <select
+                value={selectedRecipeId}
+                onChange={(e) => {
+                  const id = e.target.value;
+                  setSelectedRecipeId(id);
+                  const prod = products.find((p) => p.id === id);
+                  if (prod) {
+                    const singleBatchCost =
+                      CostCalculator.calculateBatchCost(
+                        prod.ingredients,
+                        prod.otherDirectCosts
+                      ) || 20;
+                    setUnitBatchCost(singleBatchCost);
+                    setNumberOfBatches(1);
+                    setUnitsPerBatch(prod.batchYieldUnits || 1);
+                    setTotalSupplies(singleBatchCost);
+                    setSellingPrice(prod.sellingPrice || 10);
+                    setDesiredMarginPercent(prod.suggestedMarginPercent || 50);
+                  }
+                }}
+                className="w-full px-3 py-1.5 text-xs rounded-lg border border-dulcinea-copper/40 bg-white font-medium focus:outline-none focus:ring-2 focus:ring-dulcinea-blue/30"
+              >
+                <option value="">-- Cargar receta existente --</option>
+                {products.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} ({p.batchYieldUnits} {p.yieldUnitName})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">
-              1. Inversión Total en Insumos ({business.currencySymbol})
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-bold text-dulcinea-text">
+                1. Inversión Total en Insumos ({business.currencySymbol})
+              </label>
+              <span className="text-[11px] font-mono text-dulcinea-muted">
+                {formatCurrency(unitBatchCost, business.currencySymbol)} / lote
+              </span>
+            </div>
             <div className="relative">
-              <span className="absolute left-3 top-2.5 font-bold text-gray-400">
+              <span className="absolute left-3 top-2.5 font-bold text-stone-400">
                 {business.currencySymbol}
               </span>
               <input
                 type="number"
                 step="any"
-                min="1"
+                min="0"
                 value={totalSupplies}
-                onChange={(e) => setTotalSupplies(Number(e.target.value))}
-                className="w-full pl-8 pr-4 py-2 text-sm font-bold font-mono rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                onChange={(e) => {
+                  const val = Math.max(0, Number(e.target.value));
+                  setTotalSupplies(val);
+                  setUnitBatchCost(Math.round((val / safeBatches) * 100) / 100);
+                }}
+                className="w-full pl-8 pr-4 py-2 text-sm font-bold font-mono rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-dulcinea-blue/40"
               />
             </div>
-            <span className="text-[11px] text-gray-400 mt-0.5 block">
-              Gasto total en harina, mantequilla, huevos, chocolate, gas y empaque
+            <span className="text-[11px] text-dulcinea-muted mt-0.5 block">
+              Se multiplica automáticamente al cambiar la cantidad de lotes.
             </span>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">
+              <label className="block text-xs font-bold text-dulcinea-text mb-1">
                 2. Lotes / Bandejas
               </label>
               <input
                 type="number"
                 min="1"
                 value={numberOfBatches}
-                onChange={(e) => setNumberOfBatches(Number(e.target.value))}
-                className="w-full px-3 py-2 text-sm font-bold font-mono rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 text-center"
+                onChange={(e) => {
+                  const newBatches = Math.max(1, Number(e.target.value) || 1);
+                  setNumberOfBatches(newBatches);
+                  setTotalSupplies(Math.round(unitBatchCost * newBatches * 100) / 100);
+                }}
+                className="w-full px-3 py-2 text-sm font-bold font-mono rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-dulcinea-blue/40 text-center"
               />
-              <span className="text-[10px] text-gray-400 mt-0.5 block">Ej: 3 bandejas</span>
+              <span className="text-[10px] text-dulcinea-muted mt-0.5 block">Escala insumos ×{safeBatches}</span>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">
+              <label className="block text-xs font-bold text-dulcinea-text mb-1">
                 3. Unidades por Lote
               </label>
               <input
                 type="number"
                 min="1"
                 value={unitsPerBatch}
-                onChange={(e) => setUnitsPerBatch(Number(e.target.value))}
-                className="w-full px-3 py-2 text-sm font-bold font-mono rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 text-center"
+                onChange={(e) => setUnitsPerBatch(Math.max(1, Number(e.target.value) || 1))}
+                className="w-full px-3 py-2 text-sm font-bold font-mono rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-dulcinea-blue/40 text-center"
               />
-              <span className="text-[10px] text-gray-400 mt-0.5 block">Ej: 5 unidades</span>
+              <span className="text-[10px] text-dulcinea-muted mt-0.5 block">Por cada tanda</span>
             </div>
           </div>
 
-          <div className="bg-amber-50/60 p-3 rounded-2xl border border-amber-200 text-xs">
-            <span className="text-gray-500">Unidades totales producidas:</span>
-            <div className="text-base font-bold text-gray-900 font-mono mt-0.5">
-              {numberOfBatches} × {unitsPerBatch} = {totalUnits} unidades
+          <div className="bg-dulcinea-cream/55 p-3 rounded-xl border border-dulcinea-copper/30 text-xs">
+            <span className="text-dulcinea-muted">Producción total simulada:</span>
+            <div className="text-base font-bold text-dulcinea-midnight font-mono mt-0.5">
+              {safeBatches} × {safeUnitsPerBatch} = {totalUnits} unidades
             </div>
           </div>
 
-          <div className="border-t border-gray-100 pt-3 space-y-3">
+          <div className="border-t border-stone-100 pt-3 space-y-3">
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">
+              <label className="block text-xs font-bold text-dulcinea-text mb-1">
                 4. Precio de Venta al Público ({business.currencySymbol})
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-2.5 font-bold text-gray-400">
+                <span className="absolute left-3 top-2.5 font-bold text-stone-400">
                   {business.currencySymbol}
                 </span>
                 <input
@@ -166,34 +242,65 @@ export const ProfitabilityCalculatorModal: React.FC<ProfitabilityCalculatorModal
                   step="0.5"
                   min="0.5"
                   value={sellingPrice}
-                  onChange={(e) => setSellingPrice(Number(e.target.value))}
-                  className="w-full pl-8 pr-4 py-2 text-sm font-bold font-mono rounded-xl border border-amber-300 bg-amber-50/30 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  onChange={(e) => setSellingPrice(Math.max(0, Number(e.target.value)))}
+                  className="w-full pl-8 pr-4 py-2 text-sm font-bold font-mono rounded-lg border border-dulcinea-blue/40 bg-dulcinea-blue-soft/30 focus:outline-none focus:ring-2 focus:ring-dulcinea-blue/40"
                 />
               </div>
             </div>
 
-            <div>
-              <div className="flex justify-between text-xs font-bold text-gray-700 mb-1">
-                <span>¿Deseas calcular por Margen Objetivo?</span>
-                <span className="text-amber-800">{desiredMarginPercent}%</span>
+            <div className="bg-stone-50 p-3.5 rounded-xl border border-stone-200 space-y-2.5">
+              <div className="flex justify-between items-center text-xs font-bold text-dulcinea-text">
+                <span>5. Margen Objetivo Deseado</span>
+                <span className="font-mono px-2 py-0.5 rounded-md bg-dulcinea-blue text-white">
+                  {desiredMarginPercent}%
+                </span>
               </div>
               <input
                 type="range"
                 min="20"
                 max="85"
                 value={desiredMarginPercent}
-                onChange={(e) => {
-                  const m = Number(e.target.value);
-                  setDesiredMarginPercent(m);
-                  if (costPerUnit > 0) {
-                    setSellingPrice(CostCalculator.calculateSuggestedPrice(costPerUnit, m));
-                  }
-                }}
-                className="w-full accent-amber-600 cursor-pointer"
+                onChange={(e) => setDesiredMarginPercent(Number(e.target.value))}
+                className="w-full accent-dulcinea-blue cursor-pointer"
               />
-              <span className="text-[11px] text-gray-500">
-                Al mover el control deslizante, se calcula automáticamente el precio de venta recomendado.
-              </span>
+
+              {/* Price Comparison Card */}
+              <div className="grid grid-cols-3 gap-2 pt-1 text-center text-[11px]">
+                <div className="bg-white p-2 rounded-lg border border-stone-200">
+                  <span className="text-dulcinea-muted block">Actual</span>
+                  <span className="font-mono font-bold text-dulcinea-midnight">
+                    {formatCurrency(sellingPrice, business.currencySymbol)}
+                  </span>
+                </div>
+                <div className="bg-dulcinea-blue-soft/70 p-2 rounded-lg border border-dulcinea-blue/30">
+                  <span className="text-dulcinea-blue font-semibold block">Sugerido</span>
+                  <span className="font-mono font-bold text-dulcinea-midnight">
+                    {formatCurrency(suggestedPriceForMargin, business.currencySymbol)}
+                  </span>
+                </div>
+                <div className="bg-white p-2 rounded-lg border border-stone-200">
+                  <span className="text-dulcinea-muted block">Diferencia</span>
+                  <span
+                    className={`font-mono font-bold ${
+                      priceDifference >= 0 ? 'text-dulcinea-success' : 'text-dulcinea-cherry'
+                    }`}
+                  >
+                    {priceDifference >= 0 ? '+' : ''}
+                    {formatCurrency(priceDifference, business.currencySymbol)}
+                  </span>
+                </div>
+              </div>
+
+              {Math.abs(priceDifference) >= 0.01 && (
+                <button
+                  type="button"
+                  onClick={() => setSellingPrice(suggestedPriceForMargin)}
+                  className="w-full py-1.5 rounded-lg bg-dulcinea-blue hover:bg-[#2f698d] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Aplicar precio sugerido ({formatCurrency(suggestedPriceForMargin, business.currencySymbol)})</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

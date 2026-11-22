@@ -1,6 +1,6 @@
 import { format, isValid, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Product, ProductionBatch, Sale } from '../../entities';
+import { Product, ProductionBatch, Sale, WasteRecord } from '../../entities';
 import { calculateProductMetrics } from './CostCalculator';
 import { calculateSaleItemTotals, calculateSaleTotals } from './SalesService';
 
@@ -14,6 +14,7 @@ export interface MonthlyProfitabilityPoint {
   longLabel: string; // e.g. "Junio 2026"
   ventasTotales: number;
   costosTotales: number;
+  perdidasTotales: number;
   utilidadNeta: number;
   margenPorcentaje: number;
   unidadesVendidas: number;
@@ -29,6 +30,11 @@ export interface DashboardMetrics {
   totalUnitsProduced: number;
   totalUnitsSold: number;
   lowMarginProducts: Product[];
+  totalLossCost: number;
+  totalLossRevenue: number;
+  totalLossCount: number;
+  netProfitWithLoss: number;
+  marginWithLoss: number;
 }
 
 export interface ProductPerformanceSummary {
@@ -55,7 +61,8 @@ export function groupMonthlyProfitability(
   sales: readonly Sale[],
   batches: readonly ProductionBatch[],
   costBasis: CostBasis = 'lotes',
-  useLongMonthNames: boolean = false
+  useLongMonthNames: boolean = false,
+  wastes: readonly WasteRecord[] = []
 ): MonthlyProfitabilityPoint[] {
   const map = new Map<
     string,
@@ -63,6 +70,7 @@ export function groupMonthlyProfitability(
       ventas: number;
       costoLotes: number;
       costoVentas: number;
+      perdidas: number;
       unidades: number;
       lotes: number;
     }
@@ -76,6 +84,7 @@ export function groupMonthlyProfitability(
       ventas: 0,
       costoLotes: 0,
       costoVentas: 0,
+      perdidas: 0,
       unidades: 0,
       lotes: 0,
     };
@@ -97,11 +106,28 @@ export function groupMonthlyProfitability(
       ventas: 0,
       costoLotes: 0,
       costoVentas: 0,
+      perdidas: 0,
       unidades: 0,
       lotes: 0,
     };
     current.costoLotes += b.totalSuppliesCost || 0;
     current.lotes += b.numberOfBatches || 1;
+    map.set(key, current);
+  });
+
+  wastes.forEach((w) => {
+    if (!w.date) return;
+    const parsedDate = parseISO(w.date);
+    const key = isValid(parsedDate) ? format(parsedDate, 'yyyy-MM') : w.date.slice(0, 7);
+    const current = map.get(key) || {
+      ventas: 0,
+      costoLotes: 0,
+      costoVentas: 0,
+      perdidas: 0,
+      unidades: 0,
+      lotes: 0,
+    };
+    current.perdidas += w.directCostLost || 0;
     map.set(key, current);
   });
 
@@ -118,7 +144,8 @@ export function groupMonthlyProfitability(
     const costosTotales =
       Math.round((costBasis === 'lotes' ? entry.costoLotes : entry.costoVentas) * 100) / 100;
     const ventasTotales = Math.round(entry.ventas * 100) / 100;
-    const utilidadNeta = Math.round((ventasTotales - costosTotales) * 100) / 100;
+    const perdidasTotales = Math.round((entry.perdidas || 0) * 100) / 100;
+    const utilidadNeta = Math.round((ventasTotales - costosTotales - perdidasTotales) * 100) / 100;
     const margenPorcentaje =
       ventasTotales > 0 ? Math.round(((utilidadNeta / ventasTotales) * 100) * 10) / 10 : 0;
 
@@ -130,6 +157,7 @@ export function groupMonthlyProfitability(
       longLabel,
       ventasTotales,
       costosTotales,
+      perdidasTotales,
       utilidadNeta,
       margenPorcentaje,
       unidadesVendidas: entry.unidades,
@@ -145,7 +173,8 @@ export function calculateDashboardMetrics(
   sales: readonly Sale[],
   batches: readonly ProductionBatch[],
   products: readonly Product[],
-  lowMarginThreshold: number = 40
+  lowMarginThreshold: number = 40,
+  wastes: readonly WasteRecord[] = []
 ): DashboardMetrics {
   const totalSalesRevenue =
     Math.round(
@@ -183,6 +212,21 @@ export function calculateDashboardMetrics(
       }, 0) * 100
     ) / 100;
 
+  const totalLossCost =
+    Math.round(wastes.reduce((acc, w) => acc + (w.directCostLost || 0), 0) * 100) / 100;
+
+  const totalLossRevenue =
+    Math.round(wastes.reduce((acc, w) => acc + (w.potentialRevenueLost || 0), 0) * 100) / 100;
+
+  const totalLossCount = wastes.length;
+
+  const netProfitWithLoss = Math.round((totalNetProfit - totalLossCost) * 100) / 100;
+
+  const marginWithLoss =
+    totalSalesRevenue > 0
+      ? Math.round(((netProfitWithLoss / totalSalesRevenue) * 100) * 10) / 10
+      : 0;
+
   const averageMargin =
     totalSalesRevenue > 0 ? Math.round(((totalNetProfit / totalSalesRevenue) * 100) * 10) / 10 : 0;
 
@@ -203,6 +247,11 @@ export function calculateDashboardMetrics(
     totalUnitsProduced,
     totalUnitsSold,
     lowMarginProducts,
+    totalLossCost,
+    totalLossRevenue,
+    totalLossCount,
+    netProfitWithLoss,
+    marginWithLoss,
   };
 }
 

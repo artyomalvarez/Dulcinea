@@ -171,6 +171,62 @@ export function calculateProductMetrics(
   };
 }
 
+export interface LossMetrics {
+  directCostLost: number;
+  potentialRevenueLost: number;
+  potentialProfitLost: number;
+  originalBatchProfit: number;
+  adjustedBatchProfit: number;
+  originalMarginPercent: number;
+  adjustedMarginPercent: number;
+  unitsToRecoverLoss: number;
+}
+
+/**
+ * Calculates financial damage, margin drop, and recovery requirements for lost/damaged products
+ */
+export function calculateLossMetrics(
+  product: Pick<Product, 'sellingPrice' | 'batchYieldUnits' | 'ingredients' | 'otherDirectCosts'> & {
+    suggestedMarginPercent?: number;
+  },
+  damagedUnits: number
+): LossMetrics {
+  const metrics = calculateProductMetrics({
+    ...product,
+    suggestedMarginPercent: product.suggestedMarginPercent ?? 50,
+  });
+  const safeYield = Number(product.batchYieldUnits) > 0 ? Number(product.batchYieldUnits) : 1;
+  const safeDamaged = Math.max(0, Math.min(damagedUnits, safeYield));
+
+  const directCostLost = Math.round(metrics.costPerUnit * safeDamaged * 100) / 100;
+  const potentialRevenueLost = Math.round(product.sellingPrice * safeDamaged * 100) / 100;
+  const potentialProfitLost = Math.round(metrics.profitPerUnit * safeDamaged * 100) / 100;
+
+  const validUnits = Math.max(0, safeYield - safeDamaged);
+  const actualRevenue = Math.round(validUnits * product.sellingPrice * 100) / 100;
+  const adjustedBatchProfit = Math.round((actualRevenue - metrics.totalBatchCost) * 100) / 100;
+
+  const originalMarginPercent = metrics.profitMarginPercent;
+  const adjustedMarginPercent =
+    actualRevenue > 0
+      ? Math.round(((adjustedBatchProfit / actualRevenue) * 100) * 10) / 10
+      : -100;
+
+  const unitsToRecoverLoss =
+    metrics.profitPerUnit > 0 ? Math.ceil(directCostLost / metrics.profitPerUnit) : 0;
+
+  return {
+    directCostLost,
+    potentialRevenueLost,
+    potentialProfitLost,
+    originalBatchProfit: metrics.totalBatchProfit,
+    adjustedBatchProfit,
+    originalMarginPercent,
+    adjustedMarginPercent,
+    unitsToRecoverLoss,
+  };
+}
+
 export const CostCalculator = {
   convertToBaseUnit,
   calculateIngredientRecipeCost,
@@ -182,4 +238,5 @@ export const CostCalculator = {
   calculateSuggestedPrice,
   calculateBreakevenUnits,
   calculateProductMetrics,
+  calculateLossMetrics,
 };

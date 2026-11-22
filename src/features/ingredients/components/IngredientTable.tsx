@@ -1,5 +1,5 @@
-import React from 'react';
-import { Edit2, Trash2, Boxes } from 'lucide-react';
+import React, { useState } from 'react';
+import { Edit2, Trash2, Boxes, Check, X, SlidersHorizontal } from 'lucide-react';
 import { BusinessProfile, Ingredient } from '../../../entities';
 import {
   formatCurrency,
@@ -23,6 +23,7 @@ interface IngredientTableProps {
   onEdit: (ingredient: Ingredient) => void;
   onDelete: (id: string) => void;
   onResetFilters: () => void;
+  onUpdateStock?: (id: string, newStock: number) => void;
 }
 
 export const IngredientTable: React.FC<IngredientTableProps> = ({
@@ -33,7 +34,23 @@ export const IngredientTable: React.FC<IngredientTableProps> = ({
   onEdit,
   onDelete,
   onResetFilters,
+  onUpdateStock,
 }) => {
+  const [editingStockId, setEditingStockId] = useState<string | null>(null);
+  const [stockInputVal, setStockInputVal] = useState<number>(0);
+
+  const handleStartEditStock = (ing: Ingredient) => {
+    setEditingStockId(ing.id);
+    setStockInputVal(ing.currentStock ?? 0);
+  };
+
+  const handleSaveStock = (id: string) => {
+    if (onUpdateStock) {
+      onUpdateStock(id, Math.max(0, stockInputVal));
+    }
+    setEditingStockId(null);
+  };
+
   if (filteredIngredients.length === 0) {
     return (
       <div className="bg-white rounded-2xl border border-dulcinea-copper/25 p-12 text-center text-gray-400 space-y-3 shadow-sm">
@@ -53,10 +70,57 @@ export const IngredientTable: React.FC<IngredientTableProps> = ({
 
   const renderStockBadge = (ing: Ingredient) => {
     const isLowStock = StockService.isLowStock(ing);
+    const isEditing = editingStockId === ing.id;
+
+    if (isEditing) {
+      return (
+        <div className="flex items-center gap-1.5 py-1">
+          <input
+            type="number"
+            min="0"
+            step="any"
+            value={stockInputVal}
+            onChange={(e) => setStockInputVal(Number(e.target.value))}
+            className="w-20 px-2 py-1 text-xs font-mono font-bold rounded-lg border border-dulcinea-copper bg-amber-50/50 focus:outline-none"
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleSaveStock(ing.id);
+              if (e.key === 'Escape') setEditingStockId(null);
+            }}
+          />
+          <button
+            onClick={() => handleSaveStock(ing.id)}
+            className="p-1 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer"
+            title="Guardar conteo"
+          >
+            <Check className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => setEditingStockId(null)}
+            className="p-1 rounded-md bg-stone-200 text-stone-600 hover:bg-stone-300 cursor-pointer"
+            title="Cancelar"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      );
+    }
+
     return (
-      <div className="space-y-1">
-        <div className="font-mono text-xs font-bold text-gray-800">
-          {ing.currentStock !== undefined ? `${ing.currentStock} ${ing.purchasePackageUnit}` : '—'}
+      <div className="space-y-1 group">
+        <div className="flex items-center gap-1.5">
+          <span className="font-mono text-xs font-bold text-gray-800">
+            {ing.currentStock !== undefined ? `${ing.currentStock} ${ing.purchasePackageUnit}` : '—'}
+          </span>
+          {onUpdateStock && (
+            <button
+              onClick={() => handleStartEditStock(ing)}
+              className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-stone-400 hover:text-dulcinea-midnight hover:bg-stone-100 transition-opacity cursor-pointer"
+              title="Ajustar conteo de stock rápido"
+            >
+              <SlidersHorizontal className="w-3 h-3" />
+            </button>
+          )}
         </div>
         {ing.minStockAlert !== undefined && ing.minStockAlert > 0 && (
           <span

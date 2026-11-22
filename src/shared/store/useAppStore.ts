@@ -8,6 +8,7 @@ import {
   Product,
   ProductionBatch,
   Sale,
+  WasteRecord,
 } from '../../entities';
 import {
   INITIAL_BATCHES,
@@ -16,6 +17,7 @@ import {
   INITIAL_INVOICES,
   INITIAL_PRODUCTS,
   INITIAL_SALES,
+  INITIAL_WASTES,
 } from '../api/initialData';
 import { storageAdapter } from '../api/localStorage';
 import { applySaleToBatches, revertSaleFromBatches } from '../lib';
@@ -27,12 +29,14 @@ export interface AppStoreState {
   batches: ProductionBatch[];
   sales: Sale[];
   invoices: Invoice[];
+  wastes: WasteRecord[];
 
   saveProduct: (product: Product) => void;
   deleteProduct: (id: string) => void;
 
   saveIngredient: (ingredient: Ingredient) => void;
   deleteIngredient: (id: string) => void;
+  updateIngredientStock: (id: string, newStock: number) => void;
 
   saveBatch: (batch: ProductionBatch) => void;
   deleteBatch: (id: string) => void;
@@ -43,6 +47,9 @@ export interface AppStoreState {
   saveInvoice: (invoice: Invoice) => void;
   deleteInvoice: (id: string) => void;
   updateInvoiceStatus: (id: string, status: Invoice['status']) => void;
+
+  saveWaste: (waste: WasteRecord) => void;
+  deleteWaste: (id: string) => void;
 
   saveBusiness: (profile: BusinessProfile) => void;
 
@@ -60,6 +67,7 @@ export const useAppStore = create<AppStoreState>()(
       batches: storageAdapter.getBatches(),
       sales: storageAdapter.getSales(),
       invoices: storageAdapter.getInvoices(),
+      wastes: storageAdapter.getWastes(),
 
       saveProduct: (newProd) =>
         set((state) => {
@@ -87,6 +95,13 @@ export const useAppStore = create<AppStoreState>()(
       deleteIngredient: (id) =>
         set((state) => ({
           ingredients: state.ingredients.filter((i) => i.id !== id),
+        })),
+
+      updateIngredientStock: (id, newStock) =>
+        set((state) => ({
+          ingredients: state.ingredients.map((ing) =>
+            ing.id === id ? { ...ing, currentStock: Math.max(0, Math.round(newStock * 100) / 100) } : ing
+          ),
         })),
 
       saveBatch: (newBatch) =>
@@ -148,6 +163,34 @@ export const useAppStore = create<AppStoreState>()(
           invoices: state.invoices.map((inv) => (inv.id === id ? { ...inv, status } : inv)),
         })),
 
+      saveWaste: (newWaste) =>
+        set((state) => {
+          const exists = state.wastes.some((w) => w.id === newWaste.id);
+          const wastes = exists
+            ? state.wastes.map((w) => (w.id === newWaste.id ? newWaste : w))
+            : [newWaste, ...state.wastes];
+
+          // If waste is an ingredient loss, deduct from ingredient currentStock
+          let updatedIngredients = state.ingredients;
+          if (newWaste.type === 'insumo_vencido' && newWaste.itemId && !exists) {
+            updatedIngredients = state.ingredients.map((ing) => {
+              if (ing.id === newWaste.itemId) {
+                const current = ing.currentStock ?? 0;
+                const updatedStock = Math.max(0, Math.round((current - newWaste.quantity) * 100) / 100);
+                return { ...ing, currentStock: updatedStock };
+              }
+              return ing;
+            });
+          }
+
+          return { wastes, ingredients: updatedIngredients };
+        }),
+
+      deleteWaste: (id) =>
+        set((state) => ({
+          wastes: state.wastes.filter((w) => w.id !== id),
+        })),
+
       saveBusiness: (profile) => set({ business: profile }),
 
       exportBackup: () => {
@@ -162,6 +205,7 @@ export const useAppStore = create<AppStoreState>()(
             batches: state.batches,
             sales: state.sales,
             invoices: state.invoices,
+            wastes: state.wastes,
           },
           null,
           2
@@ -183,6 +227,7 @@ export const useAppStore = create<AppStoreState>()(
             batches: data.batches ?? state.batches,
             sales: data.sales ?? state.sales,
             invoices: data.invoices ?? state.invoices,
+            wastes: data.wastes ?? state.wastes,
           }));
           return true;
         } catch {
@@ -198,6 +243,7 @@ export const useAppStore = create<AppStoreState>()(
           batches: INITIAL_BATCHES,
           sales: INITIAL_SALES,
           invoices: INITIAL_INVOICES,
+          wastes: INITIAL_WASTES,
         }),
     }),
     {
@@ -209,6 +255,7 @@ export const useAppStore = create<AppStoreState>()(
         batches: state.batches,
         sales: state.sales,
         invoices: state.invoices,
+        wastes: state.wastes,
       }),
     }
   )
